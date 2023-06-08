@@ -39,7 +39,7 @@ class TmxPicoAio:
                  loop=None,
                  shutdown_on_exception=True,
                  close_loop_on_shutdown=True,
-                 reset_on_shutdown=True):
+                 reset_on_shutdown=True, allow_i2c_errors=False):
         """
 
         :param com_port: e.g. COM3 or /dev/ttyACM0.
@@ -65,7 +65,9 @@ class TmxPicoAio:
                                        when a shutdown is called or a serial
                                        error occurs
 
-        :para reset_on_shutdown: Reset the board upon shutdown
+        :param reset_on_shutdown: Reset the board upon shutdown
+        
+        :param allow_i2c_errors: Allow I2C errors or raise a RuntimeError
         """
 
         # check to make sure that Python interpreter is version 3.7 or greater
@@ -86,6 +88,7 @@ class TmxPicoAio:
         self.reset_on_shutdown = reset_on_shutdown
         self.autostart = autostart
         self.close_loop_on_shutdown = close_loop_on_shutdown
+        self.allow_i2c_errors = allow_i2c_errors
         # set the event loop
         if loop is None:
             self.loop = asyncio.get_event_loop()
@@ -616,8 +619,8 @@ class TmxPicoAio:
 
         for item in args:
             command.append(item)
-
         await self._send_command(command)
+        await asyncio.sleep(0.1)
 
     async def neo_pixel_set_value(self, pixel_number, r=0, g=0, b=0, auto_show=False):
         """
@@ -1626,6 +1629,9 @@ class TmxPicoAio:
 
         :param data: data[0] = i2c_device
         """
+        if self.allow_i2c_errors:
+            print(f'i2c Write Failed for I2C port {data[0]}')
+            return
         if self.shutdown_on_exception:
             await self.shutdown()
         raise RuntimeError(
@@ -1637,6 +1643,9 @@ class TmxPicoAio:
 
         :param data: data[0] = i2c device
         """
+        if self.allow_i2c_errors:
+            print(f'i2c Read Failed for I2C port {data[0]}')
+            return
         if self.shutdown_on_exception:
             await self.shutdown()
         raise RuntimeError(

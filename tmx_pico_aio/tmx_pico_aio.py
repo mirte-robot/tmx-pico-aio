@@ -620,7 +620,6 @@ class TmxPicoAio:
         for item in args:
             command.append(item)
         await self._send_command(command)
-        await asyncio.sleep(0.1)
 
     async def neo_pixel_set_value(self, pixel_number, r=0, g=0, b=0, auto_show=False):
         """

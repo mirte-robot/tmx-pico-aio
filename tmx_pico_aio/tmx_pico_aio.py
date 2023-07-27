@@ -584,6 +584,15 @@ class TmxPicoAio:
 
         await self._send_command(command)
 
+    async def i2c_write_loop(address, commands, i2c_port, callback, no_stop=False):
+
+
+    async def i2c_write_enqueue(self, address, commands, i2c_port, callback, no_stop=False):
+        loop = self.loop
+        loop.ensure_future(self.i2c_write_loop(address, commands, i2c_port, callback, no_stop))
+        jklsdkjldsfjklsdjkfld
+        # TODO: asyncio future gebruiken!
+
     async def i2c_write(self, address, args, i2c_port=0, no_stop=False):
         """
         Write data to an i2c device.

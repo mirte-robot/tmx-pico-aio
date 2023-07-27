@@ -208,6 +208,9 @@ class TmxPicoAio:
         self.i2c_scl_pins = {n: 255 for n in range(3, 22, 2)}
         self.i2c_scl_pins[27] = 255
 
+        self.i2c_message_counter = 0
+        self.i2c_message_waiters = [0 for n in range(0, 255)]
+        self.i2c_message_data = [[] for n in range(0,255)]
         # create a dictionary that holds all the servo ranges
         self.servo_ranges = {gpio_pin: [1000, 2000] for gpio_pin in
                              range(23)}
@@ -301,6 +304,8 @@ class TmxPicoAio:
                 self.serial_port = TelemetrixAioSerial(port.device, 115200,
                                                        telemetrix_aio_instance=self,
                                                        close_loop_on_error=self.close_loop_on_shutdown)
+                # await self.serial_port.start_serial()
+
             except SerialException:
                 continue
             # create a list of serial ports that we opened
@@ -315,6 +320,7 @@ class TmxPicoAio:
                 await self.serial_port.reset_input_buffer()
                 await self.serial_port.reset_output_buffer()
 
+
     async def _manual_open(self):
         """
         Com port was specified by the user - try to open up that port
@@ -326,6 +332,7 @@ class TmxPicoAio:
             self.serial_port = TelemetrixAioSerial(self.com_port, 115200,
                                                    telemetrix_aio_instance=self,
                                                    close_loop_on_error=self.close_loop_on_shutdown)
+            await self.serial_port.start_serial()
         except KeyboardInterrupt:
             if self.shutdown_on_exception:
                 await self.shutdown()
@@ -561,7 +568,7 @@ class TmxPicoAio:
                 if self.shutdown_on_exception:
                     await self.shutdown()
                 raise RuntimeError(
-                    'I2C Write: set_pin_mode_i2c never called for i2c port 0.')
+                    'I2C Read: set_pin_mode_i2c never called for i2c port 0.')
             else:
                 self.i2c_callback = callback
 
@@ -571,7 +578,7 @@ class TmxPicoAio:
                     if self.shutdown_on_exception:
                         await self.shutdown()
                     raise RuntimeError(
-                        'I2C Write: set_pin_mode_i2c never called for i2c port 1.')
+                        'I2C Read: set_pin_mode_i2c never called for i2c port 1.')
                 else:
                     self.i2c_callback2 = callback
 
@@ -584,13 +591,27 @@ class TmxPicoAio:
 
         await self._send_command(command)
 
-    async def i2c_write_loop(address, commands, i2c_port, callback, no_stop=False):
+    async def i2c_write_loop(address, commands, i2c_port, no_stop=False):
+        # stuur data met message id
+        for command in commands:
+            success = await self.i2c_write(address, command, i2c_port, no_stop)
+            if(not success):
+                return False
+            # await event.wait() # TODO: timeout toevoegen
+        # await voor callback
+        # ga verder
+        return True
 
-
-    async def i2c_write_enqueue(self, address, commands, i2c_port, callback, no_stop=False):
+    async def i2c_write_enqueue(self, address, commands, i2c_port, no_stop=False):
+        
         loop = self.loop
-        loop.ensure_future(self.i2c_write_loop(address, commands, i2c_port, callback, no_stop))
-        jklsdkjldsfjklsdjkfld
+        task = loop.create_task(self.i2c_write_loop(address, commands, i2c_port, no_stop))
+        try:
+            r = await asyncio.wait_for(task, timeout=10)
+        except asyncio.TimeoutError as ex:
+            print(ex)
+        
+        # jklsdkjldsfjklsdjkfld
         # TODO: asyncio future gebruiken!
 
     async def i2c_write(self, address, args, i2c_port=0, no_stop=False):
@@ -623,12 +644,26 @@ class TmxPicoAio:
                     await self.shutdown()
                 raise RuntimeError(
                     'I2C Write: set_pin_mode i2c never called for i2c port 2.')
-
-        command = [PrivateConstants.I2C_WRITE, i2c_port, address, len(args), no_stop]
+        message_id = self.i2c_message_counter
+        self.i2c_message_counter += 1
+        if(self.i2c_message_counter >254):
+            self.i2c_message_counter = 0
+        event = asyncio.Event()
+        self.i2c_message_waiters[message_id] = event
+        
+        command = [PrivateConstants.I2C_WRITE, i2c_port, address,message_id, len(args), no_stop]
 
         for item in args:
             command.append(item)
+        # print("write", str(message_id))
         await self._send_command(command)
+        await event.wait()
+        # print("write_report ", str(message_id), self.i2c_message_data[message_id])
+        data = self.i2c_message_data[message_id]
+        if(data[2] > 128): # signed -> unsigned number
+            print("Write failed")
+            return False
+        return True
 
     async def neo_pixel_set_value(self, pixel_number, r=0, g=0, b=0, auto_show=False):
         """
@@ -1434,6 +1469,7 @@ class TmxPicoAio:
         If any exceptions are thrown, they are ignored.
 
         """
+        print("shutting down!")
         self.shutdown_flag = True
         # stop all reporting - both analog and digital
         try:
@@ -1521,15 +1557,24 @@ class TmxPicoAio:
             if self.shutdown_flag:
                 break
             try:
+                # print("waiting for packet len")
                 packet_length = await self.serial_port.read()
-            except TypeError:
+                # print("packet len==", packet_length)
+                if(packet_length == 0):
+                    raise RuntimeError('Is your USB cable plugged in?')
+                    if self.shutdown_on_exception:
+                        await self.shutdown()
+                    break
+            except TypeError as e:
+                print(e)
                 continue
-            except OSError:
+            except OSError as e:
+                print(e)
                 break
-            # except AttributeError:
-            #     raise RuntimeError('Is your USB cable plugged in?')
-            #     if self.shutdown_on_exception:
-            #         await self.shutdown()
+            except AttributeError:
+                raise RuntimeError('Is your USB cable plugged in?')
+                if self.shutdown_on_exception:
+                    await self.shutdown()
 
             # get the rest of the packet
             try:
@@ -1538,14 +1583,14 @@ class TmxPicoAio:
                 continue
             except OSError:
                 break
-
+            # print("got packet")
             report = packet[0]
             # handle all other messages by looking them up in the
             # command dictionary
-
+            # print("packet:", packet)
             # noinspection PyArgumentList
             await self.report_dispatch[report](packet[1:])
-            await asyncio.sleep(self.sleep_tune)
+            # await asyncio.sleep(self.sleep_tune)
 
     async def set_scan_delay(self, delay):
         """
@@ -1637,13 +1682,17 @@ class TmxPicoAio:
 
         :param data: data[0] = i2c_device
         """
+        message_id = data[1]
+        self.i2c_message_data[message_id] = data
+        # print("setting id", str(message_id))
+        self.i2c_message_waiters[message_id].set()
         if self.allow_i2c_errors:
             print(f'i2c Write Failed for I2C port {data[0]}')
             return
-        if self.shutdown_on_exception:
-            await self.shutdown()
-        raise RuntimeError(
-            f'i2c Write Failed for I2C port {data[0]}')
+        # if self.shutdown_on_exception:
+        #     await self.shutdown()
+        # raise RuntimeError(
+        #     f'i2c Write Failed for I2C port {data[0]}')
 
     async def _i2c_read_failed(self, data):
         """
@@ -1709,7 +1758,9 @@ class TmxPicoAio:
         # print(command)
         send_message = bytes(command)
         try:
+            # print("start write")
             await self.serial_port.write(send_message)
+            # print("done write")
         except AttributeError:
             if self.shutdown_on_exception:
                 await self.shutdown()

@@ -244,3 +244,7 @@ except KeyboardInterrupt:
     sys.exit(0)
 except RuntimeError:
     sys.exit(0)
+
+
+
+TODO: add error checking

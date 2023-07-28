@@ -119,7 +119,7 @@ class TmxPicoAio:
         self.report_dispatch.update(
             {PrivateConstants.I2C_READ_REPORT: self._i2c_read_report})
         self.report_dispatch.update(
-            {PrivateConstants.I2C_WRITE_FAILED: self._i2c_write_failed})
+            {PrivateConstants.I2C_WRITE_FAILED: self._i2c_write_report})
         self.report_dispatch.update(
             {PrivateConstants.I2C_READ_FAILED: self._i2c_read_failed})
         self.report_dispatch.update(
@@ -211,6 +211,10 @@ class TmxPicoAio:
         self.i2c_message_counter = 0
         self.i2c_message_waiters = [0 for n in range(0, 255)]
         self.i2c_message_data = [[] for n in range(0,255)]
+
+        self.i2c_read_message_counter = 0
+        self.i2c_read_message_waiters = [0 for n in range(0, 255)]
+        self.i2c_read_message_data = [[] for n in range(0,255)]
         # create a dictionary that holds all the servo ranges
         self.servo_ranges = {gpio_pin: [1000, 2000] for gpio_pin in
                              range(23)}
@@ -538,8 +542,6 @@ class TmxPicoAio:
 
         :param number_of_bytes: number of bytes to be read
 
-        :param callback: Required callback function to report i2c data as a
-                   result of read command
 
        :param i2c_port: 0 = port 0, 1 = port 1
 
@@ -557,11 +559,6 @@ class TmxPicoAio:
 
         """
 
-        if not callback:
-            if self.shutdown_on_exception:
-                await self.shutdown()
-            raise RuntimeError('I2C Read: A callback function must be specified.')
-
         # i2c_port = 0 for port 0
         if i2c_port == 0:
             if not self.i2c_0_active:
@@ -569,8 +566,6 @@ class TmxPicoAio:
                     await self.shutdown()
                 raise RuntimeError(
                     'I2C Read: set_pin_mode_i2c never called for i2c port 0.')
-            else:
-                self.i2c_callback = callback
 
         else:
             if not i2c_port == 1:
@@ -579,10 +574,15 @@ class TmxPicoAio:
                         await self.shutdown()
                     raise RuntimeError(
                         'I2C Read: set_pin_mode_i2c never called for i2c port 1.')
-                else:
-                    self.i2c_callback2 = callback
+        message_id = self.i2c_read_message_counter
+        self.i2c_read_message_counter += 1
+        if(self.i2c_read_message_counter >254):
+            self.i2c_read_message_counter = 0
+        event = asyncio.Event()
+        self.i2c_read_message_waiters[message_id] = event
 
-        command = [PrivateConstants.I2C_READ, i2c_port, address, register,
+
+        command = [PrivateConstants.I2C_READ, i2c_port, address, message_id, register,
                    number_of_bytes, no_stop]
 
         # no register specified
@@ -590,6 +590,14 @@ class TmxPicoAio:
             command[3] = PrivateConstants.I2C_NO_REGISTER
 
         await self._send_command(command)
+        try:
+            await asyncio.wait_for(event.wait(), 1) # wait 1 second for the reply message
+        except Exception:
+            print("no answer read")
+            return False
+
+        data = self.i2c_read_message_data[message_id]
+        return data
 
     async def i2c_write_loop(address, commands, i2c_port, no_stop=False):
         # stuur data met message id
@@ -1683,22 +1691,18 @@ class TmxPicoAio:
         """
         Execute callback for i2c reads.
 
-        :param data: [I2C_READ_REPORT, i2c_port, i2c_address,
+        :param data: [I2C_READ_REPORT, i2c_port, i2c_address, message_id,
         register, number of bytes read, bytes read..., time-stamp]
         """
+        message_id = data[1]
 
-        cb_list = [PrivateConstants.I2C_READ_REPORT, data[0], data[1]] + data[2:]
+        self.i2c_read_message_data[message_id] = data
+        self.i2c_read_message_waiters[message_id].set()
 
-        cb_list.append(time.time())
 
-        if cb_list[1]:
-            await self.i2c_callback2(cb_list)
-        else:
-            await self.i2c_callback(cb_list)
-
-    async def _i2c_write_failed(self, data):
+    async def _i2c_write_report(self, data):
         """
-        I2c write attempt failed
+        I2c write reply
 
         :param data: data[0] = i2c_device
         """
@@ -1706,9 +1710,9 @@ class TmxPicoAio:
         self.i2c_message_data[message_id] = data
         # print("setting id", str(message_id))
         self.i2c_message_waiters[message_id].set()
-        if self.allow_i2c_errors:
-            print(f'i2c Write Failed for I2C port {data[0]}')
-            return
+        # if self.allow_i2c_errors:
+        #     print(f'i2c Write Failed for I2C port {data[0]}')
+        #     return
         # if self.shutdown_on_exception:
         #     await self.shutdown()
         # raise RuntimeError(

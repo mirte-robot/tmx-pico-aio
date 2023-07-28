@@ -18,6 +18,7 @@
 import asyncio
 import sys
 import time
+import traceback
 
 from serial.serialutil import SerialException
 from serial.tools import list_ports
@@ -666,10 +667,11 @@ class TmxPicoAio:
         # print("write", str(message_id))
         await self._send_command(command)
         try:
-            await asyncio.wait_for(event.wait(), 1) # wait 1 second for the acknowledgement message
+            await asyncio.wait_for(event.wait(), 5) # wait 1 second for the acknowledgement message
         except Exception as e:
             print(e)
-            print("not acknowledged")
+            print(event.is_set(), self.i2c_message_data[message_id])
+            print("not acknowledged", address, args, i2c_port)
             return False
 
         data = self.i2c_message_data[message_id]
@@ -1617,7 +1619,9 @@ class TmxPicoAio:
             try:
                 await self.report_dispatch[report](packet[1:])
             except Exception as e:
-                print(e)
+                print("exc", packet)
+                traceback.print_exc()
+                print(e, "dispatch")
             # await asyncio.sleep(self.sleep_tune)
 
     async def set_scan_delay(self, delay):

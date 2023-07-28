@@ -29,6 +29,7 @@ class Oled(_SSD1306):
         self.addr = addr
         self.temp = bytearray(2)
         self.i2c_port = 0
+        self.failed = False
         # Add an extra byte to the data buffer to hold an I2C data/command byte
         # to use hardware-compatible I2C transactions.  A memoryview of the
         # buffer is used to mask this byte from the framebuffer operations
@@ -59,10 +60,17 @@ class Oled(_SSD1306):
         for ev in self.init_awaits:
             await ev
         for cmd in self.write_commands:
-            await self.board.i2c_write(60, cmd, i2c_port=self.i2c_port)
+            out = await self.board.i2c_write(60, cmd, i2c_port=self.i2c_port)
+            if(not out):
+                print("write failed start")
+                self.failed=True
+                return
 
     # TODO: make faster with asyncio
     async def set_oled_image_service(self, type, value):
+        if(self.failed):
+            print("oled writing failed")
+            return
         if type == "text":
             text = value.replace("\\n", "\n")
             image = Image.new("1", (128, 64))
@@ -144,17 +152,28 @@ class Oled(_SSD1306):
         self.write_commands.append([0x80, cmd])
     
     async def write_cmd_async(self, cmd):
+        if(self.failed):
+            return
         self.temp[0] = 0x80
         self.temp[1] = cmd
-        await self.board.i2c_write(60, self.temp, i2c_port=self.i2c_port)
+        out = await self.board.i2c_write(60, self.temp, i2c_port=self.i2c_port)
+        if(not out):
+            print("failed write oled")
+            self.failed = True
 
     async def write_framebuf_async(self):
+        if(self.failed):
+            return
         for i in range(
             64
-        ):  # TODO: can we have higher i2c buffer (limited by firmata 64 bits and wire 32 bits, so actually 16 bits since we need 1 bit)
+        ):
             buf = self.buffer[i * 16 : (i + 1) * 16 + 1]
             buf[0] = 0x40
-            await self.board.i2c_write(60, buf, i2c_port=self.i2c_port)
+            out = await self.board.i2c_write(60, buf, i2c_port=self.i2c_port)
+            if(not out):
+                print("failed wrcmd")
+                self.failed = True
+                break
     
     def write_framebuf(self):
         for i in range(
@@ -164,7 +183,6 @@ class Oled(_SSD1306):
             buf[0] = 0x40
             self.write_commands.append(buf)
 
-            # self.init_awaits.append( self.board.i2c_write(60, buf, i2c_port=self.i2c_port))
 
     async def show_png(self, file):
         image_file = Image.open(file)  # open color image
@@ -175,7 +193,7 @@ class Oled(_SSD1306):
 
 
 async def oled(board):
-
+    print('start oled')
     oled = Oled(128, 64, board)
     await oled.start()
     print("done init")
@@ -183,8 +201,7 @@ async def oled(board):
     print("done text")
     await asyncio.sleep(1)
     await oled.set_oled_image_service("text", "ljksdfjlkdfsajkljlkdfsjlkdfsjkldfsjkljkldfsjklsdfljkdfsjkldfjklsjkldsjlkdfsjklsdfjklfsadjkljlksadfljkadsljksadf")
-    await oled.show_png('/home/arendjan/mirte/tmx-pico-aio/images/tmx2-10.png')
-    await oled.set_oled_image_service("animation", "tmx2")
+    return oled
 
 
 
@@ -227,24 +244,30 @@ async def oled(board):
 
 
 # get the event loop
-loop = asyncio.get_event_loop()
+loop = asyncio.new_event_loop()
 
-try:
-    board = tmx_pico_aio.TmxPicoAio()
-    print("got board")
-except KeyboardInterrupt:
-    sys.exit()
+async def main():
+    try:
+        board = tmx_pico_aio.TmxPicoAio( autostart=False, loop = loop)
+        await board.start_aio()
+        print("got board")
+    except KeyboardInterrupt:
+        sys.exit()
+    try:
+        # start the main function
+        ol = await oled(board)
+        
+        await asyncio.sleep(4)
+        print("done wait")
+        
+        await ol.set_oled_image_service("text", "soep")
+        print("done sleep")
+        await board.shutdown()
+    except KeyboardInterrupt:
+        await board.shutdown()
+        sys.exit(0)
+    except RuntimeError as e:
+        print(e)
+        sys.exit(0)
 
-try:
-    # start the main function
-    loop.run_until_complete(oled(board))
-    loop.run_until_complete(board.reset_board())
-except KeyboardInterrupt:
-    loop.run_until_complete(board.shutdown())
-    sys.exit(0)
-except RuntimeError:
-    sys.exit(0)
-
-
-
-TODO: add error checking
+loop.run_until_complete(main())

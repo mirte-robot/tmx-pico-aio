@@ -20,20 +20,19 @@ import asyncio
 import sys
 import serial
 import time
-import serial_asyncio
 LF = 0x0a
 import aioserial
 
 class TelemetrixAioSerial:
     def __init__(self, com_port='/dev/ttyACM0', baud_rate=115200, sleep_tune=.0001,
-                 telemetrix_aio_instance=None, close_loop_on_error=True):
+                 telemetrix_aio_instance=None, close_loop_on_error=True, loop = None):
         self.com_port = com_port
         self.sleep_tune = sleep_tune
         self.telemetrix_aio_instance = telemetrix_aio_instance
         self.close_loop_on_error = close_loop_on_error
         self.baud_rate = baud_rate
         self.closed = False
-        self.serial = aioserial.AioSerial(port=com_port, baudrate=baud_rate, cancel_write_timeout=1, cancel_read_timeout=1)
+        self.serial = aioserial.AioSerial(port=com_port, baudrate=baud_rate, cancel_write_timeout=1, cancel_read_timeout=1, loop=loop)
 
     async def read(self, size=1):
         # print("start read s", size)

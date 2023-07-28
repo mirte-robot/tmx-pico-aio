@@ -304,9 +304,9 @@ class TmxPicoAio:
                 self.serial_port = TelemetrixAioSerial(port.device, 115200,
                                                        telemetrix_aio_instance=self,
                                                        close_loop_on_error=self.close_loop_on_shutdown)
-                # await self.serial_port.start_serial()
 
-            except SerialException:
+            except SerialException as e:
+                print(e)
                 continue
             # create a list of serial ports that we opened
             # make sure this is a pico board
@@ -657,8 +657,13 @@ class TmxPicoAio:
             command.append(item)
         # print("write", str(message_id))
         await self._send_command(command)
-        await event.wait()
-        # print("write_report ", str(message_id), self.i2c_message_data[message_id])
+        try:
+            await asyncio.wait_for(event.wait(), 1) # wait 1 second for the acknowledgement message
+        except Exception as e:
+            print(e)
+            print("not acknowledged")
+            return False
+
         data = self.i2c_message_data[message_id]
         if(data[2] > 128): # signed -> unsigned number
             print("Write failed")
@@ -1536,9 +1541,16 @@ class TmxPicoAio:
         """
         Send a command to the Pico to perform a hardware reset
         """
+        # TODO: BROKEN: telemetrix will think pins are setup(like i2c pins), while the board doesn't, 
+        # needs either resetting telemetrix settings or sending commands to set pins to pico.
+
+        # do not shutdown when there is an exception, as it will generate quite a few, because the pico needs to reboot
+        sh = self.shutdown_on_exception 
+        self.shutdown_on_exception = False
         command = [PrivateConstants.RESET_BOARD]
         await self._send_command(command)
         await asyncio.sleep(.2)
+        self.shutdown_on_exception = sh # reinstate original settings
 
     async def _pico_report_dispatcher(self):
         """
@@ -1560,11 +1572,16 @@ class TmxPicoAio:
                 # print("waiting for packet len")
                 packet_length = await self.serial_port.read()
                 # print("packet len==", packet_length)
-                if(packet_length == 0):
-                    raise RuntimeError('Is your USB cable plugged in?')
-                    if self.shutdown_on_exception:
-                        await self.shutdown()
-                    break
+                if(packet_length == 0): # == error
+
+                    if( self.shutdown_flag):
+                        break
+                    else:
+                        raise RuntimeError('Is your USB cable plugged in?')
+                        if self.shutdown_on_exception:
+                            await self.shutdown()
+                            break
+                        continue
             except TypeError as e:
                 print(e)
                 continue
@@ -1589,7 +1606,10 @@ class TmxPicoAio:
             # command dictionary
             # print("packet:", packet)
             # noinspection PyArgumentList
-            await self.report_dispatch[report](packet[1:])
+            try:
+                await self.report_dispatch[report](packet[1:])
+            except Exception as e:
+                print(e)
             # await asyncio.sleep(self.sleep_tune)
 
     async def set_scan_delay(self, delay):

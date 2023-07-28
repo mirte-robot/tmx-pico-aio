@@ -1583,7 +1583,7 @@ class TmxPicoAio:
                 packet_length = await self.serial_port.read()
                 # print("packet len==", packet_length)
                 if(packet_length == 0): # == error
-
+                    print("packet == 0")
                     if( self.shutdown_flag):
                         break
                     else:
@@ -1616,8 +1616,8 @@ class TmxPicoAio:
             # command dictionary
             # print("packet:", packet)
             # noinspection PyArgumentList
-            try:
-                await self.report_dispatch[report](packet[1:])
+            try: # TODO: is dit beter of juist niet?
+                self.loop.create_task( self.report_dispatch[report](packet[1:]))
             except Exception as e:
                 print("exc", packet)
                 traceback.print_exc()

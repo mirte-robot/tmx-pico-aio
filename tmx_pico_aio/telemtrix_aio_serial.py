@@ -246,7 +246,6 @@
 
 import asyncio
 import sys
-import serial
 import time
 LF = 0x0a
 import aioserial

@@ -1784,12 +1784,9 @@ class TmxPicoAio:
         """
         # the length of the list is added at the head
         command.insert(0, len(command))
-        # print(command)
         send_message = bytes(command)
         try:
-            # print("start write")
-            await self.serial_port.write(send_message)
-            # print("done write")
+            self.serial_port.write(send_message)
         except AttributeError:
             if self.shutdown_on_exception:
                 await self.shutdown()

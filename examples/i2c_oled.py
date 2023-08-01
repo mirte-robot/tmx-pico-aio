@@ -164,16 +164,19 @@ class Oled(_SSD1306):
     async def write_framebuf_async(self):
         if(self.failed):
             return
-        for i in range(
-            64
-        ):
+        async def task(self, i):
             buf = self.buffer[i * 16 : (i + 1) * 16 + 1]
             buf[0] = 0x40
             out = await self.board.i2c_write(60, buf, i2c_port=self.i2c_port)
             if(not out):
                 print("failed wrcmd")
                 self.failed = True
-                break
+        tasks = []
+        for i in range(
+            64
+        ):
+            tasks.append(task(self, i))
+        await asyncio.gather(*tasks)
     
     def write_framebuf(self):
         for i in range(
@@ -197,10 +200,10 @@ async def oled(board):
     oled = Oled(128, 64, board)
     await oled.start()
     print("done init")
+    s = time.time()
     await oled.set_oled_image_service("text", "asdf")
-    print("done text")
+    print("done text ", time.time()-s)
     await asyncio.sleep(1)
-    await oled.set_oled_image_service("text", "ljksdfjlkdfsajkljlkdfsjlkdfsjkldfsjkljkldfsjklsdfljkdfsjkldfjklsjkldsjlkdfsjklsdfjklfsadjkljlksadfljkadsljksadf")
     return oled
 
 

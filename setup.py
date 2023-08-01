@@ -9,7 +9,7 @@ with open('README.md') as f:
 setup(
     name='tmx-pico-aio',
     packages=['tmx_pico_aio'],
-    install_requires=['pyserial'],
+    install_requires=['pyserial', 'aioserial'],
 
     version='1.3',
     description="Remotely Control And Monitor A Raspberry Pi Pico Using Asyncio",

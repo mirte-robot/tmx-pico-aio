@@ -312,6 +312,7 @@ class TmxPicoAio:
 
             except SerialException as e:
                 print(e)
+                print(traceback.format_exc())
                 continue
             # create a list of serial ports that we opened
             # make sure this is a pico board

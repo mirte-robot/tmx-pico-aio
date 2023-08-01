@@ -267,11 +267,9 @@ class TelemetrixAioSerial:
         self.serial = aioserial.AioSerial(port=com_port, baudrate=baud_rate, cancel_write_timeout=1, cancel_read_timeout=1, loop=loop)
         self.queue = []
 
-
     async def read(self, size=1):
         if(self.serial.inWaiting()>0):
             self.queue.extend(self.serial.read_all())
-            print(len(self.queue))
         if(len(self.queue)>=size):
             data =  [self.queue.pop(0) for i in range(size)]
         else:

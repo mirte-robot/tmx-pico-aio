@@ -16,13 +16,7 @@
  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 """
 
-import asyncio
-import sys
-import time
-LF = 0x0a
 import aioserial
-
-from queue import Queue
 import traceback
 
 

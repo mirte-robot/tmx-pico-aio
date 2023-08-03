@@ -601,29 +601,6 @@ class TmxPicoAio:
         data = self.i2c_read_message_data[message_id]
         return data
 
-    async def i2c_write_loop(address, commands, i2c_port, no_stop=False):
-        # stuur data met message id
-        for command in commands:
-            success = await self.i2c_write(address, command, i2c_port, no_stop)
-            if(not success):
-                return False
-            # await event.wait() # TODO: timeout toevoegen
-        # await voor callback
-        # ga verder
-        return True
-
-    async def i2c_write_enqueue(self, address, commands, i2c_port, no_stop=False):
-        
-        loop = self.loop
-        task = loop.create_task(self.i2c_write_loop(address, commands, i2c_port, no_stop))
-        try:
-            r = await asyncio.wait_for(task, timeout=10)
-        except asyncio.TimeoutError as ex:
-            print(ex)
-        
-        # jklsdkjldsfjklsdjkfld
-        # TODO: asyncio future gebruiken!
-
     async def i2c_write(self, address, args, i2c_port=0, no_stop=False):
         """
         Write data to an i2c device.

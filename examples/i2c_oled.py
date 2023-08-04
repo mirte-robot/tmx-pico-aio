@@ -88,10 +88,10 @@ class Oled(_SSD1306):
             await self.show_async()
 
         if type == "image":
-            self.show_png( value + ".png" )  # open color image
+            await self.show_png( os.path.dirname(os.path.abspath(__file__)) +"/../images/example/" + value + ".png" )  # open color image
 
         if type == "animation":
-            folder = "~/images/"
+            folder = os.path.dirname(os.path.abspath(__file__)) +"/../images/example/"
             number_of_images = len(
                 [
                     name
@@ -217,10 +217,10 @@ async def main():
         
         await ol.set_oled_image_service("text", "soep")
         await asyncio.sleep(4)
-        await ol.set_oled_image_service("image", "test")
+        await ol.set_oled_image_service("image", "tmx-1")
         await asyncio.sleep(4)
 
-        await ol.set_oled_image_service("animation", "test")
+        await ol.set_oled_image_service("animation", "tmx")
         await asyncio.sleep(4)
 
         await board.shutdown()

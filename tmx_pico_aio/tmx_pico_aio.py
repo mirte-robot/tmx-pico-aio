@@ -1780,6 +1780,6 @@ class TmxPicoAio:
                        0, time.time()]
         else:
             cb_list = [PrivateConstants.SONAR_DISTANCE, report[0],
-                       (report[1]*100 + report[2] + (report[3] / 100)), time.time()]
+                       (report[1]*100 + report[2]), time.time()]
 
         await cb(cb_list)

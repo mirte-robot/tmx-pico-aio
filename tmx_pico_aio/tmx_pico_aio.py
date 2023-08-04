@@ -209,9 +209,9 @@ class TmxPicoAio:
         self.i2c_scl_pins = {n: 255 for n in range(3, 22, 2)}
         self.i2c_scl_pins[27] = 255
 
-        self.i2c_message_counter = 0
-        self.i2c_message_waiters = [0 for n in range(0, 255)]
-        self.i2c_message_data = [[] for n in range(0,255)]
+        self.i2c_write_message_counter = 0
+        self.i2c_write_message_waiters = [0 for n in range(0, 255)]
+        self.i2c_write_message_data = [[] for n in range(0,255)]
 
         self.i2c_read_message_counter = 0
         self.i2c_read_message_waiters = [0 for n in range(0, 255)]
@@ -631,28 +631,27 @@ class TmxPicoAio:
                     await self.shutdown()
                 raise RuntimeError(
                     'I2C Write: set_pin_mode i2c never called for i2c port 2.')
-        message_id = self.i2c_message_counter
-        self.i2c_message_counter += 1
-        if(self.i2c_message_counter >254):
-            self.i2c_message_counter = 0
+        message_id = self.i2c_write_message_counter
+        self.i2c_write_message_counter += 1
+        if(self.i2c_write_message_counter > 254):
+            self.i2c_write_message_counter = 0
         event = asyncio.Event()
-        self.i2c_message_waiters[message_id] = event
+        self.i2c_write_message_waiters[message_id] = event
         
         command = [PrivateConstants.I2C_WRITE, i2c_port, address,message_id, len(args), no_stop]
 
         for item in args:
             command.append(item)
-        # print("write", str(message_id))
         await self._send_command(command)
         try:
             await asyncio.wait_for(event.wait(), 5) # wait 1 second for the acknowledgement message
         except Exception as e:
             print(e)
-            print(event.is_set(), self.i2c_message_data[message_id])
+            print(event.is_set(), self.i2c_write_message_data[message_id])
             print("not acknowledged", address, args, i2c_port)
             return False
 
-        data = self.i2c_message_data[message_id]
+        data = self.i2c_write_message_data[message_id]
         if(data[2] > 128): # signed -> unsigned number
             print("Write failed")
             return False
@@ -1557,11 +1556,8 @@ class TmxPicoAio:
             if self.shutdown_flag:
                 break
             try:
-                # print("waiting for packet len")
                 packet_length = await self.serial_port.read()
-                # print("packet len==", packet_length)
                 if(packet_length == 0): # == error
-                    print("packet == 0")
                     if( self.shutdown_flag):
                         break
                     else:
@@ -1588,19 +1584,14 @@ class TmxPicoAio:
                 continue
             except OSError:
                 break
-            # print("got packet")
             report = packet[0]
             # handle all other messages by looking them up in the
             # command dictionary
-            # print("packet:", packet)
             # noinspection PyArgumentList
-            try: # TODO: is dit beter of juist niet?
+            try: # TODO: check if direct calling is faster or adding it to the event loop is faster
                 self.loop.create_task( self.report_dispatch[report](packet[1:]))
             except Exception as e:
-                print("exc", packet)
-                traceback.print_exc()
-                print(e, "dispatch")
-            # await asyncio.sleep(self.sleep_tune)
+                print("dispatch error:", e)
 
     async def set_scan_delay(self, delay):
         """
@@ -1689,16 +1680,8 @@ class TmxPicoAio:
         :param data: data[0] = i2c_device
         """
         message_id = data[1]
-        self.i2c_message_data[message_id] = data
-        # print("setting id", str(message_id))
-        self.i2c_message_waiters[message_id].set()
-        # if self.allow_i2c_errors:
-        #     print(f'i2c Write Failed for I2C port {data[0]}')
-        #     return
-        # if self.shutdown_on_exception:
-        #     await self.shutdown()
-        # raise RuntimeError(
-        #     f'i2c Write Failed for I2C port {data[0]}')
+        self.i2c_write_message_data[message_id] = data
+        self.i2c_write_message_waiters[message_id].set()
 
     async def _i2c_read_failed(self, data):
         """

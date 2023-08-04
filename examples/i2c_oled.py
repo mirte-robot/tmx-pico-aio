@@ -66,7 +66,6 @@ class Oled(_SSD1306):
                 self.failed=True
                 return
 
-    # TODO: make faster with asyncio
     async def set_oled_image_service(self, type, value):
         if(self.failed):
             print("oled writing failed")
@@ -89,12 +88,10 @@ class Oled(_SSD1306):
             await self.show_async()
 
         if type == "image":
-            self.show_png(
-                "/usr/local/src/mirte/mirte-oled-images/images/" + value + ".png"
-            )  # open color image
+            self.show_png( value + ".png" )  # open color image
 
         if type == "animation":
-            folder = "/home/arendjan/mirte/tmx-pico-aio/images/"
+            folder = "~/images/"
             number_of_images = len(
                 [
                     name
@@ -196,13 +193,8 @@ class Oled(_SSD1306):
 
 
 async def oled(board):
-    print('start oled')
     oled = Oled(128, 64, board)
     await oled.start()
-    print("done init")
-    s = time.time()
-    await oled.set_oled_image_service("text", "asdf")
-    print("done text ", time.time()-s)
     await asyncio.sleep(1)
     return oled
 
@@ -222,10 +214,15 @@ async def main():
         ol = await oled(board)
         
         await asyncio.sleep(4)
-        print("done wait")
         
         await ol.set_oled_image_service("text", "soep")
-        print("done sleep")
+        await asyncio.sleep(4)
+        await ol.set_oled_image_service("image", "test")
+        await asyncio.sleep(4)
+
+        await ol.set_oled_image_service("animation", "test")
+        await asyncio.sleep(4)
+
         await board.shutdown()
     except KeyboardInterrupt:
         await board.shutdown()

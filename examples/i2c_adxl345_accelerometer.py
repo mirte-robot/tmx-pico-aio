@@ -25,23 +25,21 @@ It will continuously print data the raw xyz data from the device.
 """
 
 
-# the call back function to print the adxl345 data
-async def the_callback(data):
-    """
-    Data is supplied by the library.
-    :param data: [report_type, i2c port, Device address, device read register,
-    number of bytes returned, x data pair, y data pair, z data pair
-    time_stamp]
-    """
+def twos_comp(val, bits):
+    """compute the 2's complement of int value val"""
+    if (val & (1 << (bits - 1))) != 0:  # if sign bit is set e.g., 8bit: 128-255
+        val = val - (1 << bits)  # compute negative value
+    return val  # return positive value as is
 
-    time_stamp = data[11]
-    date = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time_stamp))
-    print(f'Raw Data:  {data}')
-    print(f'ADXL345 Report On: {date}: ')
-    print(f'\t\ti2c_port={ data[1]} x-pair={data[5]}, '
-          f'{data[6]}  y-pair={data[7]}, '
-          f'{data[8]} z-pair={data[9]}, '
-          f'{data[10]}')
+
+# the call back function to print the adxl345 data
+def the_callback(data):
+
+    x = twos_comp(data[1] << 8 | data[0], 16)*0.004
+    y = twos_comp(data[3] << 8 | data[2], 16)*0.004
+    z = twos_comp(data[5] << 8 | data[4], 16)*0.004
+
+    print(f"x: {x} y: {y} z: {z}")
     print()
 
 
@@ -49,44 +47,49 @@ async def adxl345(my_board):
     # setup adxl345
     # device address = 83
     await my_board.set_pin_mode_i2c(0, 4, 5)
-    await asyncio.sleep(.001)
+    await asyncio.sleep(0.1)
 
     # set up power and control register
     await my_board.i2c_write(83, [45, 0])
-    await asyncio.sleep(.001)
+    await asyncio.sleep(0.001)
     await my_board.i2c_write(83, [45, 8])
-    await asyncio.sleep(.001)
-
+    await asyncio.sleep(0.001)
     # set up the data format register
-    await my_board.i2c_write(83, [49, 8])
-    await asyncio.sleep(.001)
-    await my_board.i2c_write(83, [49, 3])
-    await asyncio.sleep(.001)
-
+    await my_board.i2c_write(83, [49, 8])  # 0b0000_1000 = FULL_RES, +- 2g
+    await asyncio.sleep(0.001)
+    # await my_board.i2c_write(83, [49, 3]) # why set the same register?
+    # await asyncio.sleep(.001)
     while True:
         # read 6 bytes from the data register
         try:
-            await my_board.i2c_read(83, 50, 6, the_callback)
-            await asyncio.sleep(.001)
+            out = await my_board.i2c_read(83, 50, 6) # takes 2ms
+            if(not out):
+                print("failed read")
+                await my_board.shutdown()
+                sys.exit(0)
+            the_callback(out[5:])
+            await asyncio.sleep(0.001)
         except (KeyboardInterrupt, RuntimeError):
             await my_board.shutdown()
             sys.exit(0)
 
-
 # get the event loop
-loop = asyncio.get_event_loop()
+loop = asyncio.new_event_loop()
 
 try:
-    board = tmx_pico_aio.TmxPicoAio()
-except KeyboardInterrupt:
+    board = tmx_pico_aio.TmxPicoAio(loop=loop)
+except KeyboardInterrupt as e:
+    print(e)
     sys.exit()
 
 try:
     # start the main function
     loop.run_until_complete(adxl345(board))
-    loop.run_until_complete(board.reset_board())
+    print("done axl")
+    # loop.run_until_complete(board.reset_board())
 except KeyboardInterrupt:
     loop.run_until_complete(board.shutdown())
     sys.exit(0)
-except RuntimeError:
+except RuntimeError as e:
+    print(e)
     sys.exit(0)

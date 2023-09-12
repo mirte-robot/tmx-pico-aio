@@ -13,6 +13,8 @@ class TmxSensors:
         await self.add_sensor([PrivateConstants.SENSOR_TYPES.ADXL345.value, 0], callback)
     async def add_veml6040(self, callback):
         await self.add_sensor([PrivateConstants.SENSOR_TYPES.VEML6040.value, 0], callback)
+    async def add_vl53(self, callback):
+        await self.add_sensor([PrivateConstants.SENSOR_TYPES.TOF_VL53.value, 0], callback)
 
     async def add_sensor(self, sensor_settings, callback):
         print(sensor_settings)

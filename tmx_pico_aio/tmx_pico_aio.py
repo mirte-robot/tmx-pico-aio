@@ -128,6 +128,8 @@ class TmxPicoAio:
         self.report_dispatch.update({PrivateConstants.DHT_REPORT: self._dht_report})
         self.report_dispatch.update({PrivateConstants.SPI_REPORT: self._spi_report})
         self.report_dispatch.update({PrivateConstants.ENCODER_REPORT: self._encoder_report})
+        self.report_dispatch.update({PrivateConstants.SENSOR_REPORT: self._sensor_report})
+
         # up to 16 pwm pins may be simultaneously active
         self.pwm_active_count = 0
 
@@ -228,6 +230,12 @@ class TmxPicoAio:
         self.number_of_pixels = None
 
         self.neopixels_initiated = False
+        
+        
+        self._sensor_reporter = None
+        self.sensors = tmx_sensors.TmxSensors(self)
+
+
 
         print(f"TelemetrixRpiPicoAio:  Version {PrivateConstants.TELEMETRIX_VERSION}\n\n"
               f"Copyright (c) 2021 Alan Yorinks All Rights Reserved.\n")
@@ -1503,6 +1511,15 @@ class TmxPicoAio:
 
         await cb(cb_list)
 
+    async def _sensor_report(self, report):
+        """
+
+        """
+        if(self._sensor_reporter is None):
+            print("No sensor reporter installed")
+            return
+        self._sensor_reporter(report)
+
     async def _spi_report(self, report):
         """
         Execute callback for spi reads.
@@ -1783,3 +1800,7 @@ class TmxPicoAio:
                        (report[1]*100 + report[2]), time.time()]
 
         await cb(cb_list)
+
+
+# Fix for circular dependencies:
+from tmx_pico_aio import tmx_sensors

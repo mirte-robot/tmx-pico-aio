@@ -14,7 +14,7 @@
  along with this library; if not, write to the Free Software
  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 """
-
+from enum import Enum
 
 class PrivateConstants:
     """
@@ -29,7 +29,9 @@ class PrivateConstants:
     PWM_WRITE = 3
     MODIFY_REPORTING = 4
     GET_FIRMWARE_VERSION = 5
-    RETRIEVE_PICO_UNIQUE_ID = 6  # Arduino ID query for auto-detect of telemetrix connected boards
+    RETRIEVE_PICO_UNIQUE_ID = (
+        6  # Arduino ID query for auto-detect of telemetrix connected boards
+    )
     SERVO_ATTACH = 7
     SERVO_WRITE = 8
     SERVO_DETACH = 9
@@ -54,7 +56,7 @@ class PrivateConstants:
     SPI_CS_CONTROL = 28
     SET_SCAN_DELAY = 29
     ENCODER_NEW = 30
-
+    SENSOR_NEW = 31
     # reports
     # debug data from Arduino
     DIGITAL_REPORT = DIGITAL_WRITE
@@ -70,6 +72,7 @@ class PrivateConstants:
     SPI_REPORT = 13
     ENCODER_REPORT = 14
     DEBUG_PRINT = 99
+    SENSOR_REPORT = 20
 
     TELEMETRIX_VERSION = "1.3"
 
@@ -132,3 +135,11 @@ class PrivateConstants:
     RED = 0
     GREEN = 1
     BLUE = 2
+
+    class SENSOR_TYPES(Enum):
+        GPS = 1
+        LOAD_CELL = 1
+        MPU_9250 = 2
+        TOF_VL53 = 3
+        VEML6040 = 4  # Color sensor
+        ADXL345 = 5  # // 3 axis accel

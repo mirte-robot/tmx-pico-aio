@@ -57,6 +57,7 @@ class PrivateConstants:
     SET_SCAN_DELAY = 29
     ENCODER_NEW = 30
     SENSOR_NEW = 31
+    PING = 32
     # reports
     # debug data from Arduino
     DIGITAL_REPORT = DIGITAL_WRITE
@@ -73,7 +74,7 @@ class PrivateConstants:
     ENCODER_REPORT = 14
     DEBUG_PRINT = 99
     SENSOR_REPORT = 20
-
+    PONG_REPORT = PING
     TELEMETRIX_VERSION = "1.3"
 
     # reporting control

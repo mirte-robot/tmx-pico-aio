@@ -33,6 +33,8 @@ class TelemetrixAioSerial:
         self.queue = []
 
     async def read(self, size=1):
+        if(self.closed):
+            return 0 if size == 1 else []
         if(self.serial.inWaiting()>0):
             self.queue.extend(self.serial.read_all())
         if(len(self.queue)>=size):
@@ -46,6 +48,7 @@ class TelemetrixAioSerial:
                 wait_rest = size
                 data_first = []
             try:
+                print("start read")
                 data_rest = await self.serial.read_async(wait_rest)
                 data = data_first + list( data_rest)
             except Exception as e:
@@ -53,6 +56,9 @@ class TelemetrixAioSerial:
                 print(traceback.format_exc())
                 if(self.closed):
                     return 0
+                else:
+                    print(e)
+                    print(traceback.format_exc())
                 if(size == 1):
                     return 0
                 return []
@@ -82,6 +88,8 @@ class TelemetrixAioSerial:
         """
         Close the serial port
         """
+        print("we is closed")
+        self.closed = True
         if self.serial:
             self.serial.close()
 

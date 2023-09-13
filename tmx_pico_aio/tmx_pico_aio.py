@@ -129,7 +129,7 @@ class TmxPicoAio:
         self.report_dispatch.update({PrivateConstants.SPI_REPORT: self._spi_report})
         self.report_dispatch.update({PrivateConstants.ENCODER_REPORT: self._encoder_report})
         self.report_dispatch.update({PrivateConstants.SENSOR_REPORT: self._sensor_report})
-
+        self.report_dispatch.update({PrivateConstants.PONG_REPORT: self._pong_report})
         # up to 16 pwm pins may be simultaneously active
         self.pwm_active_count = 0
 
@@ -296,6 +296,7 @@ class TmxPicoAio:
         else:
             print(f'Telemetrix4RPiPico Version Number: {firmware_version[0]}.'
                   f'{firmware_version[1]}')
+        asyncio.create_task(self.ping())
 
     async def _find_pico(self):
         """
@@ -1473,8 +1474,11 @@ class TmxPicoAio:
             return
         print("shutting down!")
         self.shutdown_flag = True
+
         # stop all reporting - both analog and digital
         try:
+            if(self.serial_port):
+                self.serial_port.closed = True
             command = [PrivateConstants.STOP_ALL_REPORTS]
             await self._send_command(command)
 
@@ -1512,6 +1516,23 @@ class TmxPicoAio:
                     self.encoder_steps[report[0]], time.time()]
 
         await cb(cb_list)
+    async def ping(self):
+        self.pingNum = 0
+        self.startPing = time.time()
+        counter = 0
+        while not self.shutdown_flag:
+            if self.pingNum != counter:
+                print('incorrect pingnum')
+            counter += 1
+            await self._send_command([PrivateConstants.PING, counter])
+            self.startPing = time.time()
+
+            await asyncio.sleep(0.5)
+            
+
+    async def _pong_report(self, report):
+        self.pingNum = report[0]
+        
 
     async def _sensor_report(self, report):
         """
@@ -1761,15 +1782,19 @@ class TmxPicoAio:
 
         :returns: number of bytes sent
         """
+        traceback.print_stack()
         # the length of the list is added at the head
         command.insert(0, len(command))
         send_message = bytes(command)
         try:
             self.serial_port.write(send_message)
-        except AttributeError:
-            if self.shutdown_on_exception:
-                await self.shutdown()
-            raise RuntimeError('Is your USB cable plugged in?')
+        # except AttributeError:
+        #     if self.shutdown_on_exception:
+        #         await self.shutdown()
+        #     raise RuntimeError('Is your USB cable plugged in?')
+        except Exception as ex:
+            print(command)
+            traceback.print_exception(type(ex), ex, ex.__traceback__)
 
     async def _servo_unavailable(self, report):
         """

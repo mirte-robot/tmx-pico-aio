@@ -1469,6 +1469,8 @@ class TmxPicoAio:
         If any exceptions are thrown, they are ignored.
 
         """
+        if(self.shutdown_flag):
+            return
         print("shutting down!")
         self.shutdown_flag = True
         # stop all reporting - both analog and digital

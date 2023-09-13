@@ -137,7 +137,7 @@ class PrivateConstants:
     BLUE = 2
 
     class SENSOR_TYPES(Enum):
-        GPS = 1
+        GPS = 0
         LOAD_CELL = 1
         MPU_9250 = 2
         TOF_VL53 = 3

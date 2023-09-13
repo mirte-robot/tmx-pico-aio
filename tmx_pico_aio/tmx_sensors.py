@@ -19,6 +19,9 @@ class TmxSensors:
         await self.add_sensor([PrivateConstants.SENSOR_TYPES.MPU_9250.value, 0], callback)
     async def add_hx711(self,out, sck, callback):
         await self.add_sensor([PrivateConstants.SENSOR_TYPES.LOAD_CELL.value,out, sck], callback)
+    async def add_gps(self,rx,tx, uart_channel, callback):
+        await self.add_sensor([PrivateConstants.SENSOR_TYPES.GPS.value,rx,tx, uart_channel], callback)
+
     async def add_sensor(self, sensor_settings, callback):
         print(sensor_settings)
         await self.pico_aio._send_command(

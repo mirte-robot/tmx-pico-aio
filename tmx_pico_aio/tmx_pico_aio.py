@@ -1103,7 +1103,7 @@ class TmxPicoAio:
             raise RuntimeError('chip_select_list must be in the form of a list')
         if not chip_select_list:
             if self.shutdown_on_exception:
-                await  self.shutdown()
+                await self.shutdown()
             raise RuntimeError('Chip select pins were not specified')
         # validate chip select pins
         for pin in chip_select_list:
@@ -1184,7 +1184,7 @@ class TmxPicoAio:
         """
         if not callback:
             if self.shutdown_on_exception:
-                self.shutdown()
+                await self.shutdown()
             raise RuntimeError('set_pin_mode_encoder: A callback must be specified')
         if quadrature and pin_B==-1:
             raise RuntimeError('set_pin_mode_encoder: quadrature encoder requires pin_B')
@@ -1206,7 +1206,7 @@ class TmxPicoAio:
             await self._send_command(command)
         else:
             if self.shutdown_on_exception:
-                self.shutdown()
+                await self.shutdown()
             raise RuntimeError('Maximum number of supported sonar devices exceeded.')
 
     async def spi_cs_control(self, chip_select_pin, select):
@@ -1516,22 +1516,28 @@ class TmxPicoAio:
                     self.encoder_steps[report[0]], time.time()]
 
         await cb(cb_list)
-    async def ping(self):
+    async def ping(self): # ping the pico at 2Hz, and receive the same value back and a random(at start) value from the pico
         self.pingNum = 0
         self.startPing = time.time()
+        self.randomPicoNum = -1
         counter = 0
         while not self.shutdown_flag:
             if self.pingNum != counter:
-                print('incorrect pingnum')
-            counter += 1
+                print('incorrect ping from Pico')
+                await self.shutdown()
+            counter = (counter +1)%256
             await self._send_command([PrivateConstants.PING, counter])
             self.startPing = time.time()
-
             await asyncio.sleep(0.5)
             
 
     async def _pong_report(self, report):
         self.pingNum = report[0]
+        if self.randomPicoNum == -1:
+            self.randomPicoNum = report[1]
+        if self.randomPicoNum != report[1]: # pico restarted in the meantime
+            print("different pico num")
+            await self.shutdown()
         
 
     async def _sensor_report(self, report):
@@ -1782,19 +1788,20 @@ class TmxPicoAio:
 
         :returns: number of bytes sent
         """
-        traceback.print_stack()
         # the length of the list is added at the head
         command.insert(0, len(command))
         send_message = bytes(command)
         try:
-            self.serial_port.write(send_message)
-        # except AttributeError:
-        #     if self.shutdown_on_exception:
-        #         await self.shutdown()
-        #     raise RuntimeError('Is your USB cable plugged in?')
+            await self.serial_port.write(send_message)
+        except AttributeError:
+            if self.shutdown_on_exception:
+                await self.shutdown()
+            raise RuntimeError('Is your USB cable plugged in?')
         except Exception as ex:
-            print(command)
-            traceback.print_exception(type(ex), ex, ex.__traceback__)
+            # print(command)
+            # traceback.print_exception(type(ex), ex, ex.__traceback__)
+            if self.shutdown_on_exception:
+                await self.shutdown()
 
     async def _servo_unavailable(self, report):
         """

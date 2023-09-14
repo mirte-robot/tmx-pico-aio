@@ -1551,7 +1551,7 @@ class TmxPicoAio:
         if(self._sensor_reporter is None):
             print("No sensor reporter installed")
             return
-        self._sensor_reporter(report)
+        await self._sensor_reporter(report)
 
     async def _spi_report(self, report):
         """

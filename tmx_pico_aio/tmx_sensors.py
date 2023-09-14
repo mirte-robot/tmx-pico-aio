@@ -30,8 +30,7 @@ class TmxSensors:
         self.callbacks.append(callback)
         self.num += 1
 
-    def _sensor_reporter(self, report):
+    async def _sensor_reporter(self, report):
         # print("sensor reporter")
         # print(report)
-        self.callbacks[report[0]](report[2:])
-        pass
+        await self.callbacks[report[0]](report[2:])

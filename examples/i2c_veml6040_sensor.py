@@ -33,7 +33,7 @@ def twos_comp(val, bits):
 
 
 # the call back function to print the adxl345 data
-def the_callback(data):
+async def the_callback(data):
     # print(data, data[0]-data[2])
     R = (data[0] | data[1] << 8)/(255*255/100)
     G = (data[2] | data[3] << 8)/(255*255/100)

@@ -26,7 +26,7 @@ It will continuously print data the raw xyz data from the device.
 """
 
 # the call back function to print the adxl345 data
-def the_callback(data):
+async def the_callback(data):
     
     [dist] = struct.unpack(">H",  b''.join(list(map(lambda i:i.to_bytes(1, 'big'), data))))
     print(f"dist: {str(dist): >4} mm")

@@ -26,7 +26,7 @@ It will continuously print data the raw xyz data from the device.
 """
 
 # the call back function to print the 9250 data
-def the_callback(data):
+async def the_callback(data):
     if(len(data)!=9*4):
         print("wrong length")
         return

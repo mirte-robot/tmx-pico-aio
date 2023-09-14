@@ -26,7 +26,7 @@ It will continuously print data the raw xyz data from the device.
 """
 
 # the call back function to print the hx711 data
-def the_callback(data):
+async def the_callback(data):
     val = list(struct.unpack('<i', b''.join(list(map(lambda i:i.to_bytes(1, 'big'), data)))))[0]
     print(val)
     

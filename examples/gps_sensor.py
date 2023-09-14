@@ -30,7 +30,7 @@ It will continuously print data the raw xyz data from the device.
 
 current_sentence = ""
 
-def the_callback(data): # each few ms, the uart buffer is checked and forwarded. This will be a few bytes, so it needs to be buffered and only when a complete NMEA sentence is received can it be parsed
+async def the_callback(data): # each few ms, the uart buffer is checked and forwarded. This will be a few bytes, so it needs to be buffered and only when a complete NMEA sentence is received can it be parsed
     global current_sentence
     current_sentence += "".join(map(lambda d: chr(d), data)) # list of ASCII integers to string
     if "\n" in current_sentence: # only parse complete lines

@@ -25,13 +25,6 @@ This example sets up and control an ADXL345 i2c accelerometer.
 It will continuously print data the raw xyz data from the device.
 """
 
-
-def twos_comp(val, bits):
-    """compute the 2's complement of int value val"""
-    if (val & (1 << (bits - 1))) != 0:  # if sign bit is set e.g., 8bit: 128-255
-        val = val - (1 << bits)  # compute negative value
-    return val  # return positive value as is
-
 # the call back function to print the 9250 data
 def the_callback(data):
     if(len(data)!=9*4):
@@ -40,12 +33,15 @@ def the_callback(data):
     ints = list( map(lambda i:i.to_bytes(1, 'big'), data))
     bytes_obj = b''.join(ints)
     vals = list(struct.unpack('<9f', bytes_obj))
-    print(f"x: {vals[0]: 5.2f} y: {vals[1]: 5.2f} z: {vals[2]: 5.2f} rx: {vals[3]: 5.2f} ry: {vals[4]: 5.2f} rz: {vals[5]: 5.2f} gx: {vals[6]: 5.2f} gy: {vals[7]: 5.2f} gz: {vals[8]: 5.2f}")
+    print(f"x: {vals[0]: >8.2f} y: {vals[1]: >8.2f} z: {vals[2]: >8.2f} rx: {vals[3]: >8.2f} ry: {vals[4]: >8.2f} rz: {vals[5]: >8.2f} gx: {vals[6]: >8.2f} gy: {vals[7]: >8.2f} gz: {vals[8]: >8.2f}")
     
 async def mpu9250(my_board):
-    await my_board.set_pin_mode_i2c(0, 4, 5)
+    i2c_port = 0
+    scl = 5
+    sda = 4
+    await my_board.set_pin_mode_i2c(i2c_port, sda, scl)
     await asyncio.sleep(0.1)
-    await my_board.sensors.add_mpu9250(the_callback)
+    await my_board.sensors.add_mpu9250(i2c_port, the_callback)
     while True:
         try:
             await asyncio.sleep(1)

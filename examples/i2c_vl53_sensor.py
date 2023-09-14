@@ -18,30 +18,27 @@ import asyncio
 import sys
 import time
 from tmx_pico_aio import tmx_pico_aio
+import struct
 
 """
 This example sets up and control an ADXL345 i2c accelerometer.
 It will continuously print data the raw xyz data from the device.
 """
 
-
-def twos_comp(val, bits):
-    """compute the 2's complement of int value val"""
-    if (val & (1 << (bits - 1))) != 0:  # if sign bit is set e.g., 8bit: 128-255
-        val = val - (1 << bits)  # compute negative value
-    return val  # return positive value as is
-
-
 # the call back function to print the adxl345 data
 def the_callback(data):
-    dist = (data[1] | data[0] << 8)
+    
+    [dist] = struct.unpack(">H",  b''.join(list(map(lambda i:i.to_bytes(1, 'big'), data))))
     print(f"dist: {str(dist): >4} mm")
 
 
 async def vl53(my_board):
-    await my_board.set_pin_mode_i2c(0, 4, 5)
+    i2c_port = 0
+    scl = 5
+    sda = 4
+    await my_board.set_pin_mode_i2c(i2c_port, sda, scl)
     await asyncio.sleep(0.1)
-    await my_board.sensors.add_vl53(the_callback)
+    await my_board.sensors.add_vl53(i2c_port, the_callback)
     while True:
         try:
             await asyncio.sleep(1)

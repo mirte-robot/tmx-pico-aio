@@ -1525,7 +1525,6 @@ class TmxPicoAio:
         self.randomPicoNum = -1
         counter = 0
         await asyncio.sleep(1) # sleep a bit before starting pinging
-        print("start ping")
         while not self.shutdown_flag:
             if self.pingNum != counter:
                 print('incorrect ping from Pico')

@@ -9,7 +9,7 @@ class TmxSensors:
         self.num = 0
         self.callbacks = []
 
-    async def add_adxl345(self, i2c_port, callback): # TODO: i2c port
+    async def add_adxl345(self, i2c_port, callback):
         await self.add_sensor([PrivateConstants.SENSOR_TYPES.ADXL345.value, i2c_port], callback)
     async def add_veml6040(self, i2c_port, callback):
         await self.add_sensor([PrivateConstants.SENSOR_TYPES.VEML6040.value, i2c_port], callback)

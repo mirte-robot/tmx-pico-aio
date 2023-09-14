@@ -32,6 +32,6 @@ class TmxSensors:
 
     def _sensor_reporter(self, report):
         # print("sensor reporter")
-        print(report)
+        # print(report)
         self.callbacks[report[0]](report[2:])
         pass

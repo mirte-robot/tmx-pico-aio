@@ -75,7 +75,7 @@ class PrivateConstants:
     DEBUG_PRINT = 99
     SENSOR_REPORT = 20
     PONG_REPORT = PING
-    TELEMETRIX_VERSION = "1.3"
+    TELEMETRIX_VERSION = "1.5"
 
     # reporting control
     REPORTING_DISABLE_ALL = 0

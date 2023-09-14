@@ -95,6 +95,7 @@ class TmxPicoAio:
             self.loop = asyncio.get_event_loop()
         else:
             self.loop = loop
+            self.close_loop_on_shutdown = False
 
         # The report_dispatch dictionary is used to process
         # incoming report messages by looking up the report message
@@ -1490,8 +1491,10 @@ class TmxPicoAio:
                 await asyncio.sleep(.2)
 
             # await self.serial_port.reset_input_buffer()
+            await self.the_task
             await self.serial_port.close()
             if self.close_loop_on_shutdown:
+                print("stop loop")
                 self.loop.stop()
         except (RuntimeError, SerialException):
             pass
@@ -1629,6 +1632,8 @@ class TmxPicoAio:
             except TypeError:
                 continue
             except OSError:
+                break
+            if(len(packet) != packet_length):
                 break
             report = packet[0]
             # handle all other messages by looking them up in the

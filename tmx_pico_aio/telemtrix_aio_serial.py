@@ -55,7 +55,10 @@ class TelemetrixAioSerial:
                     return 0
                 return []
         if(size == 1):
-            return data[0]
+            if(len(data)>0):
+                return data[0]
+            else:
+                return 0
         else:
             return list(data)
 

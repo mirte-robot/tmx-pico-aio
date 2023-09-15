@@ -131,6 +131,7 @@ class TmxPicoAio:
         self.report_dispatch.update({PrivateConstants.ENCODER_REPORT: self._encoder_report})
         self.report_dispatch.update({PrivateConstants.SENSOR_REPORT: self._sensor_report})
         self.report_dispatch.update({PrivateConstants.PONG_REPORT: self._pong_report})
+        self.report_dispatch.update({PrivateConstants.MODULE_REPORT: self._module_report})
         # up to 16 pwm pins may be simultaneously active
         self.pwm_active_count = 0
 
@@ -234,8 +235,9 @@ class TmxPicoAio:
         
         
         self._sensor_reporter = None
+        self._module_reporter = None
         self.sensors = tmx_sensors.TmxSensors(self)
-
+        self.modules = tmx_modules.TmxModules(self)
 
 
         print(f"TelemetrixRpiPicoAio:  Version {PrivateConstants.TELEMETRIX_VERSION}\n\n"
@@ -1553,6 +1555,17 @@ class TmxPicoAio:
             return
         await self._sensor_reporter(report)
 
+    async def _module_report(self, report):
+        """
+
+        """
+        if(self._module_reporter is None):
+            print("No module reporter installed")
+            return
+        await self._module_reporter(report)
+
+
+
     async def _spi_report(self, report):
         """
         Execute callback for spi reads.
@@ -1794,6 +1807,7 @@ class TmxPicoAio:
 
         :returns: number of bytes sent
         """
+        print(command)
         # the length of the list is added at the head
         command.insert(0, len(command))
         send_message = bytes(command)
@@ -1840,3 +1854,4 @@ class TmxPicoAio:
 
 # Fix for circular dependencies:
 from tmx_pico_aio import tmx_sensors
+from tmx_pico_aio import tmx_modules

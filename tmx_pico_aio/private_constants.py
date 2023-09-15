@@ -58,6 +58,8 @@ class PrivateConstants:
     ENCODER_NEW = 30
     SENSOR_NEW = 31
     PING = 32
+    MODULE_NEW = 33
+    MODULE_DATA = 34
     # reports
     # debug data from Arduino
     DIGITAL_REPORT = DIGITAL_WRITE
@@ -75,6 +77,7 @@ class PrivateConstants:
     DEBUG_PRINT = 99
     SENSOR_REPORT = 20
     PONG_REPORT = PING
+    MODULE_REPORT = MODULE_DATA
     TELEMETRIX_VERSION = "1.5"
 
     # reporting control
@@ -144,3 +147,6 @@ class PrivateConstants:
         TOF_VL53 = 3
         VEML6040 = 4  # Color sensor
         ADXL345 = 5  # // 3 axis accel
+
+    class MODULE_TYPES(Enum):
+        PCA9685 = 0

@@ -1807,7 +1807,6 @@ class TmxPicoAio:
 
         :returns: number of bytes sent
         """
-        print(command)
         # the length of the list is added at the head
         command.insert(0, len(command))
         send_message = bytes(command)

@@ -31,17 +31,18 @@ async def pca(my_board):
     await asyncio.sleep(0.1)
     updateFunc = await my_board.modules.add_pca9685(0)
     count = 102
+    for i in range(16):
+        await updateFunc(i,0, 4096/2)
     while True:
-        count = (count+1)
+        count = (count+10)
+        if(count >= 512):
+            count = 102
         try:
-            await asyncio.sleep(2)
             print(f"sending {count}")
             for i in range(16):
-                await updateFunc(i, 0)
-            await asyncio.sleep(2)
+                await updateFunc(i,count)
+            await asyncio.sleep(0.5)
 
-            for i in range(16):
-                await updateFunc(i, 4095*2**4)
         except (KeyboardInterrupt, RuntimeError):
             await my_board.shutdown()
             sys.exit(0)

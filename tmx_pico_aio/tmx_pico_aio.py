@@ -217,12 +217,12 @@ class TmxPicoAio:
         self.i2c_read_message_waiters = [0 for n in range(0, 255)]
         self.i2c_read_message_data = [[] for n in range(0,255)]
         # create a dictionary that holds all the servo ranges
-        self.servo_ranges = {gpio_pin: [1000, 2000] for gpio_pin in
+        self.servo_ranges = {gpio_pin: [600, 2400] for gpio_pin in
                              range(23)}
 
         # skip over unavailable pins
         for gpio_pin in range(25, 29):
-            self.servo_ranges[gpio_pin] = [1000, 2000]
+            self.servo_ranges[gpio_pin] = [600, 2400]
 
         # neopixel data
         self.number_of_pixels = None
@@ -977,7 +977,7 @@ class TmxPicoAio:
                 f'Maximum Number Of DHTs Exceeded - set_pin_mode_dht fails for pin {pin}')
 
     # noinspection PyRedundantParentheses
-    async def set_pin_mode_servo(self, pin_number, min_pulse=1000, max_pulse=2000):
+    async def set_pin_mode_servo(self, pin_number, min_pulse=600, max_pulse=2400):
         """
 
         Attach a pin to a servo motor

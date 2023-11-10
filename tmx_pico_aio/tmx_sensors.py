@@ -21,6 +21,8 @@ class TmxSensors:
         await self.add_sensor([PrivateConstants.SENSOR_TYPES.LOAD_CELL.value,out, sck], callback)
     async def add_gps(self,rx,tx, uart_channel, callback):
         await self.add_sensor([PrivateConstants.SENSOR_TYPES.GPS.value,rx,tx, uart_channel], callback)
+    async def add_ina226(self,i2c_port, callback):
+        await self.add_sensor([PrivateConstants.SENSOR_TYPES.INA226.value, i2c_port], callback)
 
     async def add_sensor(self, sensor_settings, callback):
         # print(sensor_settings)

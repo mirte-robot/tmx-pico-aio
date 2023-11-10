@@ -10,9 +10,11 @@ class TmxModules:
         self.callbacks = []
 
     async def add_pca9685(self, i2c_port, callback=None):
-        sensor_num = await self.add_module([PrivateConstants.MODULE_TYPES.PCA9685.value, i2c_port], callback)
+        sensor_num = await self.add_module([PrivateConstants.MODULE_TYPES.PCA9685.value, i2c_port ,0], callback)
         async def set_pwm(num, high, low=0):
-            data = struct.pack('<2H', high, low)
+            low = int(low)
+            high= int(high)
+            data = struct.pack('<2H',  low, high)
             await self.send_module(sensor_num,[num, *data])
         return set_pwm
     

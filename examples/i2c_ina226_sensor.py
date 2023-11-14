@@ -41,7 +41,7 @@ async def ina226(my_board):
     sda = 4
     await my_board.set_pin_mode_i2c(i2c_port, sda, scl)
     await asyncio.sleep(0.1)
-    await my_board.sensors.add_ina226(i2c_port, the_callback)
+    await my_board.sensors.add_ina226(i2c_port, the_callback, 0x41)
     while True:
         try:
             await asyncio.sleep(1)

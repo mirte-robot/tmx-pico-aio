@@ -151,3 +151,4 @@ class PrivateConstants:
 
     class MODULE_TYPES(Enum):
         PCA9685 = 0
+        HIWONDERSERVO = 1

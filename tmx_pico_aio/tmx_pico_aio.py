@@ -1522,18 +1522,17 @@ class TmxPicoAio:
 
         await cb(cb_list)
     async def ping(self): # ping the pico at 2Hz, and receive the same value back and a random(at start) value from the pico
+        await asyncio.sleep(5)
         self.pingNum = 0
-        self.startPing = time.time()
         self.randomPicoNum = -1
         counter = 0
         await asyncio.sleep(1) # sleep a bit before starting pinging
         while not self.shutdown_flag:
             if self.pingNum != counter:
-                print('incorrect ping from Pico')
+                print('incorrect ping from Pico', self.pingNum, counter)
                 await self.shutdown()
             counter = (counter +1)%256
             await self._send_command([PrivateConstants.PING, counter])
-            self.startPing = time.time()
             await asyncio.sleep(0.5)
             
 
@@ -1542,7 +1541,7 @@ class TmxPicoAio:
         if self.randomPicoNum == -1:
             self.randomPicoNum = report[1]
         if self.randomPicoNum != report[1]: # pico restarted in the meantime
-            print("different pico num")
+            print("different pico num", randomPicoNum, report)
             await self.shutdown()
         
 

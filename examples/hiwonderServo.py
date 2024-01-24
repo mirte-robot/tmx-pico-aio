@@ -28,27 +28,27 @@ async def callback(data):
 
 async def move_servo(the_board):
     try:
-        updaters = await the_board.modules.add_hiwonder_servo(1, 4, 5, [3, 4], callback)
+        updaters = await the_board.modules.add_hiwonder_servo(1, 4, 5, [3, 4, 5], callback)
         set_single_servo = updaters["set_single_servo"]
         set_multiple_servos = updaters["set_multiple_servos"]
         await asyncio.sleep(4)
-        await set_single_servo(4, 2000, 1000)
+        # await set_single_servo(4, 2000, 1000)
 
-        await asyncio.sleep(4)
-        await set_single_servo(4, 4000, 1000)
-        await asyncio.sleep(2)
-        await set_single_servo(3, 10000, 1000)
+        # await asyncio.sleep(4)
+        # await set_single_servo(4, 4000, 1000)
+        # await asyncio.sleep(2)
+        # await set_single_servo(3, 10000, 1000)
 
-        await asyncio.sleep(4)
-        await set_single_servo(3, 13000, 1000)
-        await asyncio.sleep(5)
-        # will send the commands to all and then start the servos
-        await set_multiple_servos(
-            [
-                {"id": 3, "angle": 10000, "time": 2000},
-                {"id": 4, "angle": 2000, "time": 3000},
-            ]
-        )
+        # await asyncio.sleep(4)
+        # await set_single_servo(3, 13000, 1000)
+        # await asyncio.sleep(5)
+        # # will send the commands to all and then start the servos
+        # await set_multiple_servos(
+        #     [
+        #         {"id": 3, "angle": 10000, "time": 2000},
+        #         {"id": 4, "angle": 2000, "time": 3000},
+        #     ]
+        # )
         await asyncio.sleep(5)
 
     except KeyboardInterrupt:

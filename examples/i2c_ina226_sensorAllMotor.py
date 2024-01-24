@@ -25,17 +25,27 @@ This example sets up and control an ADXL345 i2c accelerometer.
 It will continuously print data the raw xyz data from the device.
 """
 async def pca(my_board):
+    print("start pca")
     await my_board.set_pin_mode_i2c(0, 4, 5)
     await asyncio.sleep(0.1)
-    updateFunc = await my_board.modules.add_pca9685(0)["set_multiple_pwm"]
-    
+    updateFunc = await my_board.modules.add_pca9685(0)
+    print(updateFunc)
+    updateSing = updateFunc["set_pwm"]
+    updateFunc = updateFunc["set_multiple_pwm"]
+    # await updateSing(14, 0)
+    # await asyncio.sleep(1)
+    # await updateFunc([{"pin":12, "high":0, "low":0}])
+    # await asyncio.sleep(5)
+
+    maxS = 100
     while True:
         try:
-            await updateFunc([{"pin": p, "high": 0, "low": 4096} for p in range(16)])
-            await asyncio.sleep(10)
+            await updateFunc([{"pin": p, "high": int((4095/100)*maxS) if p%2==0 else 0, "low": 0} for p in range(0,16)])
+            await asyncio.sleep(2)
             await updateFunc([{"pin": p, "high": 0, "low": 0} for p in range(16)])
             await asyncio.sleep(10)
         except (KeyboardInterrupt, RuntimeError):
+            await updateFunc([{"pin": p, "high": 0, "low": 0} for p in range(16)])
             await my_board.shutdown()
             sys.exit(0)
 
@@ -48,14 +58,14 @@ async def the_callback(data):
     bytes_obj = b''.join(ints)
     vals = list(struct.unpack('<2f', bytes_obj))
     # print(vals, data, ints, bytes_obj )
-    print(f"{vals[0]}V {vals[1]} mA")
+    print(f"{vals[0]}V {vals[1]} A")
 
 
 async def ina226(my_board):
     i2c_port = 0
     scl = 5
     sda = 4
-    await my_board.set_pin_mode_i2c(i2c_port, sda, scl)
+    # await my_board.set_pin_mode_i2c(i2c_port, sda, scl)
     await asyncio.sleep(0.1)
     await my_board.sensors.add_ina226(i2c_port, the_callback, 0x41)
     while True:
@@ -77,7 +87,9 @@ except KeyboardInterrupt as e:
 
 try:
     # start the main function
+    loop.create_task(pca(board))
     loop.run_until_complete(ina226(board))
+    
     print("done ina")
 except KeyboardInterrupt:
     loop.run_until_complete(board.shutdown())

@@ -28,7 +28,9 @@ async def callback(data):
 
 async def move_servo(the_board):
     try:
-        updaters = await the_board.modules.add_hiwonder_servo(1, 4, 5, [3, 4, 5], callback)
+        updaters = await the_board.modules.add_hiwonder_servo(
+            1, 4, 5, [3, 4, 5], callback
+        )
         set_single_servo = updaters["set_single_servo"]
         set_multiple_servos = updaters["set_multiple_servos"]
         await asyncio.sleep(4)

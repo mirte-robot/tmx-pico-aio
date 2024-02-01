@@ -24,6 +24,8 @@ import struct
 This example sets up and control an ADXL345 i2c accelerometer.
 It will continuously print data the raw xyz data from the device.
 """
+
+
 async def pca(my_board):
     print("start pca")
     await my_board.set_pin_mode_i2c(0, 4, 5)
@@ -40,7 +42,16 @@ async def pca(my_board):
     maxS = 100
     while True:
         try:
-            await updateFunc([{"pin": p, "high": int((4095/100)*maxS) if p%2==0 else 0, "low": 0} for p in range(0,16)])
+            await updateFunc(
+                [
+                    {
+                        "pin": p,
+                        "high": int((4095 / 100) * maxS) if p % 2 == 0 else 0,
+                        "low": 0,
+                    }
+                    for p in range(0, 16)
+                ]
+            )
             await asyncio.sleep(2)
             await updateFunc([{"pin": p, "high": 0, "low": 0} for p in range(16)])
             await asyncio.sleep(10)
@@ -50,13 +61,12 @@ async def pca(my_board):
             sys.exit(0)
 
 
-
 # the call back function to print the adxl345 data
 async def the_callback(data):
-    ints = list( map(lambda i:i.to_bytes(1, 'big'), data))
-    
-    bytes_obj = b''.join(ints)
-    vals = list(struct.unpack('<2f', bytes_obj))
+    ints = list(map(lambda i: i.to_bytes(1, "big"), data))
+
+    bytes_obj = b"".join(ints)
+    vals = list(struct.unpack("<2f", bytes_obj))
     # print(vals, data, ints, bytes_obj )
     print(f"{vals[0]}V {vals[1]} A")
 
@@ -89,7 +99,7 @@ try:
     # start the main function
     loop.create_task(pca(board))
     loop.run_until_complete(ina226(board))
-    
+
     print("done ina")
 except KeyboardInterrupt:
     loop.run_until_complete(board.shutdown())

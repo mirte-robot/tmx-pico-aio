@@ -40,6 +40,7 @@ async def get_pin_report(the_board):
 
     print(await the_board.get_pico_pins())
 
+
 # get the event loop
 loop = asyncio.get_event_loop()
 try:

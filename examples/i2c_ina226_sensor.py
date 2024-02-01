@@ -25,13 +25,14 @@ This example sets up and control an ADXL345 i2c accelerometer.
 It will continuously print data the raw xyz data from the device.
 """
 
+
 # the call back function to print the adxl345 data
 async def the_callback(data):
-    ints = list( map(lambda i:i.to_bytes(1, 'big'), data))
-    
-    bytes_obj = b''.join(ints)
-    vals = list(struct.unpack('<2f', bytes_obj))
-    print(vals, data, ints, bytes_obj )
+    ints = list(map(lambda i: i.to_bytes(1, "big"), data))
+
+    bytes_obj = b"".join(ints)
+    vals = list(struct.unpack("<2f", bytes_obj))
+    print(vals, data, ints, bytes_obj)
     # print(f"{vals[0]}V {vals[1]} mA")
 
 

@@ -45,38 +45,43 @@ async def the_callback(data):
     the date and time when the differential is exceeded
     :param data: [report_type, ADC#, current reported value, timestamp]
     """
-    date = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(data[CB_TIME]))
-    print(f'ADC Report Type: {data[CB_PIN_MODE]} ADC: {data[CB_PIN]} '
-          f'Value: {data[CB_VALUE]} Time Stamp: {date}')
+    date = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(data[CB_TIME]))
+    print(
+        f"ADC Report Type: {data[CB_PIN_MODE]} ADC: {data[CB_PIN]} "
+        f"Value: {data[CB_VALUE]} Time Stamp: {date}"
+    )
 
 
 async def analog_in(my_board, adc):
     # noinspection GrazieInspection
     """
-         This function establishes the pin as an
-         analog input. Any changes on this pin will
-         be reported through the call back function.
+    This function establishes the pin as an
+    analog input. Any changes on this pin will
+    be reported through the call back function.
 
-         :param my_board: a pymata4 instance
-         :param adc: ADC number
-         """
+    :param my_board: a pymata4 instance
+    :param adc: ADC number
+    """
 
     # set the pin mode
-    await my_board.set_pin_mode_analog_input(adc, differential=10, callback=the_callback)
+    await my_board.set_pin_mode_analog_input(
+        adc, differential=10, callback=the_callback
+    )
 
-    print('Enter Control-C to quit.')
+    print("Enter Control-C to quit.")
     try:
         await asyncio.sleep(5)
-        print('Disabling reporting for 3 seconds.')
+        print("Disabling reporting for 3 seconds.")
         await my_board.disable_analog_reporting(adc)
         await asyncio.sleep(3)
-        print('Re-enabling reporting.')
+        print("Re-enabling reporting.")
         await my_board.enable_analog_reporting(adc)
         while True:
             await asyncio.sleep(5)
     except KeyboardInterrupt:
         await my_board.shutdown()
         sys.exit(0)
+
 
 # get the event loop
 loop = asyncio.get_event_loop()

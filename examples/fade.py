@@ -43,14 +43,15 @@ async def fade(the_board):
     for level in range(19999, 0, -10):
         await the_board.pwm_write(DIGITAL_PIN, level, raw=True)
 
-    await asyncio.sleep(.5)
+    await asyncio.sleep(0.5)
     # use percentages for a fade
     for level in range(0, 99):
         await the_board.pwm_write(DIGITAL_PIN, level)
-        await asyncio.sleep(.01)
+        await asyncio.sleep(0.01)
     for level in range(99, 0, -1):
         await the_board.pwm_write(DIGITAL_PIN, level)
-        await asyncio.sleep(.01)
+        await asyncio.sleep(0.01)
+
 
 # get the event loop
 loop = asyncio.get_event_loop()

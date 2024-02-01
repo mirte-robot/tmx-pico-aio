@@ -46,13 +46,13 @@ async def blink(my_board, pin, pin2, pin3, pin4):
     await asyncio.sleep(0.5)
 
     for x in range(100000):
-        print('ON',x)
+        print("ON", x)
         await my_board.digital_write(pin, 1)
         await my_board.digital_write(pin2, 0)
         await my_board.digital_write(pin3, 1)
         await my_board.digital_write(pin4, 0)
         await asyncio.sleep(0.01)
-        print('OFF')
+        print("OFF")
         await my_board.digital_write(pin, 0)
         await my_board.digital_write(pin2, 1)
         await my_board.digital_write(pin3, 0)
@@ -69,12 +69,10 @@ except KeyboardInterrupt:
 
 try:
     # start the main function
-    loop.run_until_complete(blink(board, DIGITAL_PIN, pin2,20,21))
+    loop.run_until_complete(blink(board, DIGITAL_PIN, pin2, 20, 21))
     loop.run_until_complete(board.reset_board())
 except KeyboardInterrupt:
     loop.run_until_complete(board.shutdown())
     sys.exit(0)
 except RuntimeError:
     sys.exit(0)
-
-

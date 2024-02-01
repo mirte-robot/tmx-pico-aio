@@ -30,16 +30,23 @@ It will continuously print data the raw xyz data from the device.
 
 current_sentence = ""
 
-async def the_callback(data): # each few ms, the uart buffer is checked and forwarded. This will be a few bytes, so it needs to be buffered and only when a complete NMEA sentence is received can it be parsed
+
+async def the_callback(
+    data,
+):  # each few ms, the uart buffer is checked and forwarded. This will be a few bytes, so it needs to be buffered and only when a complete NMEA sentence is received can it be parsed
     global current_sentence
-    current_sentence += "".join(map(lambda d: chr(d), data)) # list of ASCII integers to string
-    if "\n" in current_sentence: # only parse complete lines
+    current_sentence += "".join(
+        map(lambda d: chr(d), data)
+    )  # list of ASCII integers to string
+    if "\n" in current_sentence:  # only parse complete lines
         sentence = current_sentence.splitlines()
-        if len(sentence) > 1: # when current_sentence ends with a newline, it will have only one element
+        if (
+            len(sentence) > 1
+        ):  # when current_sentence ends with a newline, it will have only one element
             current_sentence = sentence[1]
         else:
             current_sentence = ""
-        try: # first sentence is always broken
+        try:  # first sentence is always broken
             msg = pynmea2.parse(sentence[0])
         except:
             return
@@ -47,16 +54,17 @@ async def the_callback(data): # each few ms, the uart buffer is checked and forw
         # print(msg.name_to_idx) # What/how can we get those fields
         if msg.sentence_type == "GGA":
             print(msg.latitude, msg.longitude)
-        if msg.sentence_type == 'RMC':
+        if msg.sentence_type == "RMC":
             print("Speed", msg.spd_over_grnd)
-        
 
     # print(''.join(chars), end='')
 
 
 async def gps(my_board):
     await asyncio.sleep(0.1)
-    await my_board.sensors.add_gps(rx=5, tx=4, uart_channel=1, callback=the_callback) # check the pinout to make sure it is the correct uart channel
+    await my_board.sensors.add_gps(
+        rx=5, tx=4, uart_channel=1, callback=the_callback
+    )  # check the pinout to make sure it is the correct uart channel
     while True:
         try:
             await asyncio.sleep(1)

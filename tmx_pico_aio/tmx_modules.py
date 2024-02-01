@@ -20,6 +20,7 @@ class TmxModules:
             ],
             callback,
         )
+
         async def set_multiple_pwm(datas):
             data = []
             for d in datas:
@@ -33,7 +34,7 @@ class TmxModules:
             data = struct.pack("<2H", low, high)
             await self.send_module(sensor_num, [num, *data])
 
-        return {"set_pwm":set_pwm, "set_multiple_pwm":set_multiple_pwm}
+        return {"set_pwm": set_pwm, "set_multiple_pwm": set_multiple_pwm}
 
     async def add_hiwonder_servo(
         self, uart_port, rx_pin, tx_pin, servo_ids=[], callback=None
@@ -91,9 +92,10 @@ class TmxModules:
                 await self.send_module(sensor_num, [2, 1, id, 1 if enabled else 0])
             except ValueError as e:
                 print(e)
+
         async def set_enabled_all(enabled):
             try:
-                await self.send_module(sensor_num, [2, 0, 1 if enabled else 0]) 
+                await self.send_module(sensor_num, [2, 0, 1 if enabled else 0])
             except ValueError as e:
                 print(e)
 

@@ -46,9 +46,11 @@ async def the_callback(data):
 
     :param data: [pin mode, pin, current reported value, timestamp]
     """
-    date = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(data[CB_TIME]))
-    print(f'Report Type: {data[CB_PIN_MODE]} Pin: {data[CB_PIN]} '
-          f'Value: {data[CB_VALUE]} Time Stamp: {date}')
+    date = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(data[CB_TIME]))
+    print(
+        f"Report Type: {data[CB_PIN_MODE]} Pin: {data[CB_PIN]} "
+        f"Value: {data[CB_VALUE]} Time Stamp: {date}"
+    )
 
 
 async def digital_input_example(the_board):
@@ -57,12 +59,12 @@ async def digital_input_example(the_board):
     await the_board.set_pin_mode_digital_input_pullup(14, the_callback)
     await the_board.set_pin_mode_digital_input_pullup(15, the_callback)
     try:
-        print('Reporting enabled for 5 seconds.')
+        print("Reporting enabled for 5 seconds.")
         await asyncio.sleep(5)
-        print('Disabling reporting for pin 12 3 seconds. All others enabled')
+        print("Disabling reporting for pin 12 3 seconds. All others enabled")
         await the_board.disable_digital_reporting(12)
         await asyncio.sleep(3)
-        print('Re-enabling reporting for pin 12.')
+        print("Re-enabling reporting for pin 12.")
         await the_board.enable_digital_reporting(12)
         while True:
             await asyncio.sleep(5)
@@ -70,6 +72,7 @@ async def digital_input_example(the_board):
     except KeyboardInterrupt:
         the_board.shutdown()
         sys.exit(0)
+
 
 # get the event loop
 loop = asyncio.get_event_loop()

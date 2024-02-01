@@ -25,16 +25,20 @@ This example sets up and control an ADXL345 i2c accelerometer.
 It will continuously print data the raw xyz data from the device.
 """
 
+
 # the call back function to print the hx711 data
 async def the_callback(data):
-    val = list(struct.unpack('<i', b''.join(list(map(lambda i:i.to_bytes(1, 'big'), data)))))[0]
+    val = list(
+        struct.unpack("<i", b"".join(list(map(lambda i: i.to_bytes(1, "big"), data))))
+    )[0]
     print(val)
-    
+
+
 async def hx711(my_board):
     await asyncio.sleep(0.1)
     sck = 14
     dt = 15
-    await my_board.sensors.add_hx711(out=dt,sck=sck,callback=the_callback)
+    await my_board.sensors.add_hx711(out=dt, sck=sck, callback=the_callback)
     while True:
         try:
             await asyncio.sleep(1)

@@ -34,7 +34,7 @@ SERVO_PIN = 16
 async def move_servo(the_board):
     try:
         await the_board.set_pin_mode_servo(SERVO_PIN, 1000, 2000)
-        time.sleep(.2)
+        time.sleep(0.2)
         await the_board.servo_write(SERVO_PIN, 90)
         time.sleep(1)
         await the_board.servo_write(SERVO_PIN, 0)
@@ -48,6 +48,7 @@ async def move_servo(the_board):
 
     await the_board.shutdown()
     sys.exit(0)
+
 
 # get the event loop
 loop = asyncio.get_event_loop()
@@ -63,5 +64,3 @@ try:
 except KeyboardInterrupt:
     loop.run_until_complete(board.shutdown())
     sys.exit(0)
-
-

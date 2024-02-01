@@ -16,6 +16,7 @@
 """
 from enum import Enum
 
+
 class PrivateConstants:
     """
     This class contains a set of constants for telemetrix internal use .

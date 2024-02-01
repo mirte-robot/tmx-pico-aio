@@ -35,10 +35,10 @@ def twos_comp(val, bits):
 # the call back function to print the adxl345 data
 async def the_callback(data):
     # print(data, data[0]-data[2])
-    R = (data[0] | data[1] << 8)/(255*255/100)
-    G = (data[2] | data[3] << 8)/(255*255/100)
-    B = (data[4] | data[5] << 8)/(255*255/100)
-    W = (data[6] | data[7] << 8)/(255*255/100)
+    R = (data[0] | data[1] << 8) / (255 * 255 / 100)
+    G = (data[2] | data[3] << 8) / (255 * 255 / 100)
+    B = (data[4] | data[5] << 8) / (255 * 255 / 100)
+    W = (data[6] | data[7] << 8) / (255 * 255 / 100)
     print(f"R: {R:.2f} G: {G:.2f} B: {B:.2f} W: {W:.2f}")
     # print(f"x: {x:.2f} y: {y:.2f} z: {z:.2f}")
 

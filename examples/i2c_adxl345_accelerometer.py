@@ -34,10 +34,9 @@ def twos_comp(val, bits):
 
 # the call back function to print the adxl345 data
 async def the_callback(data):
-
-    x = twos_comp(data[1] << 8 | data[0], 16)*0.004
-    y = twos_comp(data[3] << 8 | data[2], 16)*0.004
-    z = twos_comp(data[5] << 8 | data[4], 16)*0.004
+    x = twos_comp(data[1] << 8 | data[0], 16) * 0.004
+    y = twos_comp(data[3] << 8 | data[2], 16) * 0.004
+    z = twos_comp(data[5] << 8 | data[4], 16) * 0.004
 
     print(f"x: {x} y: {y} z: {z}")
     print()
@@ -62,8 +61,8 @@ async def adxl345(my_board):
     while True:
         # read 6 bytes from the data register
         try:
-            out = await my_board.i2c_read(83, 50, 6) # takes 2ms
-            if(not out):
+            out = await my_board.i2c_read(83, 50, 6)  # takes 2ms
+            if not out:
                 print("failed read")
                 await my_board.shutdown()
                 sys.exit(0)
@@ -72,6 +71,7 @@ async def adxl345(my_board):
         except (KeyboardInterrupt, RuntimeError):
             await my_board.shutdown()
             sys.exit(0)
+
 
 # get the event loop
 loop = asyncio.new_event_loop()

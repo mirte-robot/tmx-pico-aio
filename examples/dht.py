@@ -43,12 +43,14 @@ async def the_callback(data):
 
     """
     # pretty print the info
-    date = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(data[TIME]))
+    date = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(data[TIME]))
     temperature_c = data[TEMPERATURE]
     temperature_f = round(temperature_c * 9 / 5 + 32)
-    print(f'DHT Data Report:'
-          f'Pin: {data[PIN]} Humidity: {data[HUMIDITY]} Temperature:  '
-          f'{temperature_c}c  {temperature_f}f  Time: {date}')
+    print(
+        f"DHT Data Report:"
+        f"Pin: {data[PIN]} Humidity: {data[HUMIDITY]} Temperature:  "
+        f"{temperature_c}c  {temperature_f}f  Time: {date}"
+    )
 
 
 async def dht(the_board):
@@ -82,4 +84,3 @@ except KeyboardInterrupt:
     sys.exit(0)
 except RuntimeError:
     sys.exit(0)
-

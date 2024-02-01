@@ -63,7 +63,7 @@ class TmxModules:
             try:
                 id = servo_ids.index(servo_id)
                 data = struct.pack(">2H", angle, time)
-                await self.send_module(sensor_num, [1, id, *data])
+                await self.send_module(sensor_num, [1, 1, id, *data])
             except ValueError as e:
                 print(e)
 
@@ -81,13 +81,20 @@ class TmxModules:
                     data.append(id)
                     data.extend(data_item)
 
-                await self.send_module(sensor_num, [len(id_angles), *data])
+                await self.send_module(sensor_num, [1, len(id_angles), *data])
             except ValueError as e:
                 print(e)
 
+        async def set_enabled(id, enabled):
+            try:
+                id = servo_ids.index(id)
+                await self.send_module(sensor_num, [2, id, enabled])
+            except ValueError as e:
+                print(e)
         return {
             "set_single_servo": set_single_servo,
             "set_multiple_servos": set_multiple_servos,
+            "set_enabled": set_enabled,
         }
 
     async def add_module(self, module_settings, callback):

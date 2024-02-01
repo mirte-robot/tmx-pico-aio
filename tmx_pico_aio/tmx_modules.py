@@ -88,13 +88,20 @@ class TmxModules:
         async def set_enabled(id, enabled):
             try:
                 id = servo_ids.index(id)
-                await self.send_module(sensor_num, [2, id, enabled])
+                await self.send_module(sensor_num, [2, 1, id, 1 if enabled else 0])
             except ValueError as e:
                 print(e)
+        async def set_enabled_all(enabled):
+            try:
+                await self.send_module(sensor_num, [2, 0, 1 if enabled else 0]) 
+            except ValueError as e:
+                print(e)
+
         return {
             "set_single_servo": set_single_servo,
             "set_multiple_servos": set_multiple_servos,
             "set_enabled": set_enabled,
+            "set_enabled_all": set_enabled_all,
         }
 
     async def add_module(self, module_settings, callback):

@@ -17,7 +17,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pylint
+        pip install pylint pipenv
     - uses: smelly-python/smell-my-pr@main
       with: 
           github-token: ${{secrets.GITHUB_TOKEN}}

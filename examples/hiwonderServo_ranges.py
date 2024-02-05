@@ -38,7 +38,7 @@ async def move_servo(the_board):
     try:
         updaters = await the_board.modules.add_hiwonder_servo(1, 4, 5, ids, callback)
         await asyncio.sleep(4)
-        updaters["set_enabled_all"](False)
+        await updaters["set_enabled_all"](False)
         while True:
             await asyncio.sleep(4)
 

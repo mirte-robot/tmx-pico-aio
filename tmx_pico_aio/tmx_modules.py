@@ -99,11 +99,19 @@ class TmxModules:
             except ValueError as e:
                 print(e)
 
+        async def set_id(new_id):
+            # This will set the id of all the connected servos, so do it one by one
+            try:
+                await self.send_module(sensor_num, [3, new_id])
+            except ValueError as e:
+                print(e)
+
         return {
             "set_single_servo": set_single_servo,
             "set_multiple_servos": set_multiple_servos,
             "set_enabled": set_enabled,
             "set_enabled_all": set_enabled_all,
+            "set_id": set_id,
         }
 
     async def add_module(self, module_settings, callback):

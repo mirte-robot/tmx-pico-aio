@@ -14,6 +14,7 @@
  along with this library; if not, write to the Free Software
  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 """
+
 import asyncio
 import sys
 import time
@@ -22,16 +23,20 @@ from tmx_pico_aio import tmx_pico_aio
 
 
 ids = [3, 4, 5]
-ranges = {id: {"min": 24000, "max": 0, "id": id} for id in ids}
+ranges = {}
 
 
 async def callback(data):
+    global ranges
     for d in data:
         # print(d)
-        id, angle = d
-        if id in ranges:
-            ranges[id]["min"] = min(ranges[id]["min"], angle)
-            ranges[id]["max"] = max(ranges[id]["max"], angle)
+        servo_id = d["id"]
+        angle = d["angle"]
+        if not servo_id in ranges:
+            ranges[servo_id] = {"min": angle, "max": angle, "id": servo_id}
+
+        ranges[servo_id]["min"] = min(ranges[servo_id]["min"], angle)
+        ranges[servo_id]["max"] = max(ranges[servo_id]["max"], angle)
 
 
 async def move_servo(the_board):
@@ -41,6 +46,7 @@ async def move_servo(the_board):
         await updaters["set_enabled_all"](False)
         while True:
             await asyncio.sleep(4)
+            print(ranges)
 
     except KeyboardInterrupt:
         await the_board.shutdown()

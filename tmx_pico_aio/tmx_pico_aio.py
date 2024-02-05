@@ -1492,9 +1492,9 @@ class TmxPicoAio:
         if self.sonar_count < PrivateConstants.MAX_SONARS:
             self.sonar_callbacks[trigger_pin] = callback
             self.sonar_count += 1
-            self.pico_pins[trigger_pin] = self.pico_pins[
-                echo_pin
-            ] = PrivateConstants.AT_SONAR
+            self.pico_pins[trigger_pin] = self.pico_pins[echo_pin] = (
+                PrivateConstants.AT_SONAR
+            )
 
             command = [PrivateConstants.SONAR_NEW, trigger_pin, echo_pin]
             await self._send_command(command)

@@ -114,16 +114,30 @@ class TmxModules:
             "set_id": set_id,
         }
 
+    async def add_shutdown_relay(self, pin, pin_value, time):
+        if(time > 200 or time < 10):
+            time = 20
+        module_num = await self.add_module([PrivateConstants.MODULE_TYPES.SHUTDOWN_RELAY.value,
+pin, int(pin_value), time], None)
+
+        async def trigger_shutdown_relay(enable=True):
+            await self.send_module(module_num, [int(enable)])
+        return trigger_shutdown_relay
+
+
     async def add_module(self, module_settings, callback):
         await self.pico_aio._send_command(
             [PrivateConstants.MODULE_NEW, self.num, *module_settings]
         )
         self.callbacks.append(callback)
         self.num += 1
+
         return self.num - 1
 
     async def _module_reporter(self, report):
-        await self.callbacks[report[0]](report[2:])
+        cb = self.callbacks[report[0]]
+        if(cb != None):
+            await cb(report[2:])
 
     async def send_module(self, module_num, data):
         await self.pico_aio._send_command(

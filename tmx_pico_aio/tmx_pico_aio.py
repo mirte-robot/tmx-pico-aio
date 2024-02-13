@@ -1690,11 +1690,9 @@ class TmxPicoAio:
     async def ping(
         self,
     ):  # ping the pico at 2Hz, and receive the same value back and a random(at start) value from the pico
-        await asyncio.sleep(5)
         self.pingNum = 0
         self.randomPicoNum = -1
         counter = 0
-        await asyncio.sleep(1)  # sleep a bit before starting pinging
         while not self.shutdown_flag:
             if ((counter + 256) - self.pingNum) % 256 > 2:
                 print("incorrect ping from Pico", self.pingNum, counter)

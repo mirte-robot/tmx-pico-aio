@@ -37,7 +37,7 @@ class TmxModules:
         return {"set_pwm": set_pwm, "set_multiple_pwm": set_multiple_pwm}
 
     async def add_hiwonder_servo(
-        self, uart_port, rx_pin, tx_pin, servo_ids=[], callback=None, callback_id_verify=None
+        self, uart_port, rx_pin, tx_pin, servo_ids=[], callback=None, callback_id_verify=None, callback_servo_range=None
     ):
         async def decode_callback(data):
             it_size = 3
@@ -54,6 +54,12 @@ class TmxModules:
             elif (message_type == 4):
                 if(callback_id_verify != None):
                     await callback_id_verify(data[1], data[2])
+            elif (message_type == 6):
+                if(callback_servo_range != None):
+                    id = servo_ids[data[1]]
+                    ranges = struct.unpack(">2H", bytes(data[2:]))
+                    print(id, ranges)
+                    await callback_servo_range(id, ranges)
             
 
         sensor_num = await self.add_module(
@@ -120,13 +126,34 @@ class TmxModules:
             except ValueError as e:
                 print(e)
 
+        async def save_range(servo_id, min_r, max_r):
+            try:
+                id = servo_ids.index(servo_id)
+                data_item = struct.pack(
+                    ">2H",
+                    min_r,
+                    max_r,
+                )
+                print(data_item)
+                await self.send_module(sensor_num, [5, id, *data_item])
+            except Exception as e:
+                print(e)
+        
+        async def get_range(servo_id):
+            try:
+                id = servo_ids.index(servo_id)
+                await self.send_module(sensor_num, [6, id])
+            except Exception as e:
+                print(e)
         return {
             "set_single_servo": set_single_servo,
             "set_multiple_servos": set_multiple_servos,
             "set_enabled": set_enabled,
             "set_enabled_all": set_enabled_all,
             "set_id": set_id,
-            "verify_id": verify_id
+            "verify_id": verify_id,
+            "save_range": save_range,
+            "get_range": get_range
         }
 
     async def add_shutdown_relay(self, pin, pin_value, time):

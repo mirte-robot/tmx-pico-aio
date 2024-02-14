@@ -30,7 +30,7 @@ async def callback(data):
 async def move_servo(the_board):
     try:
         updaters = await the_board.modules.add_hiwonder_servo(
-            1, 4, 5, [], callback  # just no servos
+            0,0,1, [], callback  # just no servos
         )
         set_id = updaters["set_id"]
         while True:

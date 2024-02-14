@@ -37,16 +37,24 @@ class TmxModules:
         return {"set_pwm": set_pwm, "set_multiple_pwm": set_multiple_pwm}
 
     async def add_hiwonder_servo(
-        self, uart_port, rx_pin, tx_pin, servo_ids=[], callback=None
+        self, uart_port, rx_pin, tx_pin, servo_ids=[], callback=None, callback_id_verify=None
     ):
         async def decode_callback(data):
             it_size = 3
             out = []
-            for i in range(0, len(data), 3):
-                id = servo_ids[data[i]]
-                angle = struct.unpack(">H", bytes([data[i + 1], data[i + 2]]))[0]
-                out.append({"id": id, "angle": angle})
-            await callback(out)
+            message_type = data[0]
+            if(message_type == 0):
+                data = data[1:]
+                for i in range(0, len(data), 3):
+                    id = servo_ids[data[i]]
+                    angle = struct.unpack(">H", bytes([data[i + 1], data[i + 2]]))[0]
+                    out.append({"id": id, "angle": angle})
+                if(callback != None):
+                    await callback(out)
+            elif (message_type == 4):
+                if(callback_id_verify != None):
+                    await callback_id_verify(data[1], data[2])
+            
 
         sensor_num = await self.add_module(
             PrivateConstants.MODULE_TYPES.HIWONDERSERVO,
@@ -106,12 +114,19 @@ class TmxModules:
             except ValueError as e:
                 print(e)
 
+        async def verify_id(check_id):
+            try:
+                await self.send_module(sensor_num, [4, check_id])
+            except ValueError as e:
+                print(e)
+
         return {
             "set_single_servo": set_single_servo,
             "set_multiple_servos": set_multiple_servos,
             "set_enabled": set_enabled,
             "set_enabled_all": set_enabled_all,
             "set_id": set_id,
+            "verify_id": verify_id
         }
 
     async def add_shutdown_relay(self, pin, pin_value, time):

@@ -1686,7 +1686,8 @@ class TmxPicoAio:
         self.randomPicoNum = -1
         counter = 0
         while not self.shutdown_flag:
-            if ((counter + 256) - self.pingNum) % 256 > 2:
+            ping_diff = ((counter + 256) - self.pingNum) % 256
+            if ping_diff > 8:
                 print("incorrect ping from Pico", self.pingNum, counter)
                 await self.shutdown()
             counter = (counter + 1) % 256

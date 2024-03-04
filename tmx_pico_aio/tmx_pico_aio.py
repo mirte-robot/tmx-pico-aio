@@ -957,7 +957,7 @@ class TmxPicoAio:
 
 
         """
-        if fill_r or fill_g or fill_g not in range(256):
+        if any([x not in range(256) for x in [fill_r, fill_g, fill_b]]):
             raise RuntimeError("Pixel value must be in the range of 0-255")
 
         self.number_of_pixels = num_pixels

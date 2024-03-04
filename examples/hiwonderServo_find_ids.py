@@ -25,16 +25,20 @@ from tmx_pico_aio import tmx_pico_aio
 ids = range(1, 20)
 found = []
 
+
 async def callback_verify_id(vid, ok):
     global found
     # print(vid, ok)
-    if(ok >0):
+    if ok > 0:
         print("found", vid)
         found.append(vid)
 
+
 async def check_servos(the_board):
     try:
-        updaters = await the_board.modules.add_hiwonder_servo(0,0,1, [], callback_id_verify=callback_verify_id)
+        updaters = await the_board.modules.add_hiwonder_servo(
+            0, 0, 1, [], callback_id_verify=callback_verify_id
+        )
         await asyncio.sleep(0.5)
         for x in ids:
             # print("check ", x)

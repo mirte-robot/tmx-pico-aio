@@ -45,6 +45,7 @@ class TmxModules:
         callback=None,
         callback_id_verify=None,
         callback_servo_range=None,
+        callback_servo_offset=None,
     ):
         async def decode_callback(data):
             it_size = 3
@@ -67,6 +68,11 @@ class TmxModules:
                     ranges = struct.unpack(">2H", bytes(data[2:]))
                     print(id, ranges)
                     await callback_servo_range(id, ranges)
+            elif message_type == 8:
+                if callback_servo_offset != None:
+                    id = servo_ids[data[1]]
+                    offset = struct.unpack(">h", bytes(data[2:]))[0]
+                    await callback_servo_offset(id, offset)
 
         sensor_num = await self.add_module(
             PrivateConstants.MODULE_TYPES.HIWONDERSERVO,
@@ -140,15 +146,32 @@ class TmxModules:
                     min_r,
                     max_r,
                 )
-                print(data_item)
                 await self.send_module(sensor_num, [5, id, *data_item])
             except Exception as e:
-                print(e)
+                print("err", e)
+
+        async def save_offset(servo_id, offset):
+            try:
+                id = servo_ids.index(servo_id)
+                data_item = struct.pack(
+                    ">h",
+                    offset,
+                )
+                await self.send_module(sensor_num, [7, id, *data_item])
+            except Exception as e:
+                print("err", offset, e)
 
         async def get_range(servo_id):
             try:
                 id = servo_ids.index(servo_id)
                 await self.send_module(sensor_num, [6, id])
+            except Exception as e:
+                print(e)
+
+        async def get_offset(servo_id):
+            try:
+                id = servo_ids.index(servo_id)
+                await self.send_module(sensor_num, [8, id])
             except Exception as e:
                 print(e)
 
@@ -161,6 +184,8 @@ class TmxModules:
             "verify_id": verify_id,
             "save_range": save_range,
             "get_range": get_range,
+            "save_offset": save_offset,
+            "get_offset": get_offset,
         }
 
     async def add_shutdown_relay(self, pin, pin_value, time):

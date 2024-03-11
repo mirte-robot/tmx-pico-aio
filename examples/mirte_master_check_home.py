@@ -72,17 +72,16 @@ async def save_ranges(the_board):
         if current_pos[id] == 0:
             print("servo", id, "is not connected")
             continue
-        diff = ranges[id]["home"] - current_pos[id] - ranges[id]["offset"]
-        print("diff", id, diff)
+        diff = current_pos[id] - ranges[id]["home"]
+        totalDiff = diff + ranges[id]["offset"]
+        print("diff", id, diff, totalDiff)
         if abs(diff) > 200:  # 2 degrees
-            if abs(diff / 24) > 125:
-                print("servo", id, "too much off, not saving offset")
+            if abs(totalDiff / 24) > 125:
+                print("servo", id, "too much off, not saving offset. Rebuild arm!")
                 continue
-            print(
-                "writing offset for servo", id, "with diff", diff + ranges[id]["offset"]
-            )
+            print("writing offset for servo", id, "with diff", totalDiff)
             await updaters["save_offset"](
-                id, diff - ranges[id]["offset"]
+                id, totalDiff
             )  # TODO: check negative/positive
     print("done!")
 

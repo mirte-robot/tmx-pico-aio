@@ -1,5 +1,6 @@
 from tmx_pico_aio.private_constants import PrivateConstants
 from tmx_pico_aio.tmx_pico_aio import TmxPicoAio
+import struct
 
 
 class TmxSensors:
@@ -25,8 +26,16 @@ class TmxSensors:
         )
 
     async def add_mpu9250(self, i2c_port, callback):
+        # data: 3 acc floats, 3 gyro floats, 3 mag floats, with float being 4 bytes
+        async def mpu_callback(data):
+            values = struct.unpack("f", bytes(data))
+            acc = values[:3]
+            gyro = values[3:6]
+            mag = values[6:9]
+            await callback(acc, gyro, mag)
+
         await self.add_sensor(
-            PrivateConstants.SENSOR_TYPES.MPU_9250, [i2c_port], callback
+            PrivateConstants.SENSOR_TYPES.MPU_9250, [i2c_port], mpu_callback
         )
 
     async def add_hx711(self, out, sck, callback):

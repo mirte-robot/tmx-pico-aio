@@ -69,4 +69,3 @@ class TmxSensors:
             await self.callbacks[report[0]](report[2:])
         except Exception as e:
             print(traceback.format_exc())
-

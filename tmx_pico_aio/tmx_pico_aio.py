@@ -45,6 +45,7 @@ class TmxPicoAio:
         close_loop_on_shutdown=True,
         reset_on_shutdown=True,
         allow_i2c_errors=False,
+        hard_shutdown=False,
     ):
         """
 
@@ -97,6 +98,7 @@ class TmxPicoAio:
         self.autostart = autostart
         self.close_loop_on_shutdown = close_loop_on_shutdown
         self.allow_i2c_errors = allow_i2c_errors
+        self.hard_shutdown = hard_shutdown
         # set the event loop
         if loop is None:
             self.loop = asyncio.get_event_loop()
@@ -1630,7 +1632,8 @@ class TmxPicoAio:
             return
         print("shutting down!")
         self.shutdown_flag = True
-
+        if self.hard_shutdown:
+            exit(0)
         # stop all reporting - both analog and digital
         try:
             if self.serial_port:

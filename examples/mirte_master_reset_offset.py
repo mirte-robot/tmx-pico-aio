@@ -23,7 +23,7 @@ import aioconsole
 from tmx_pico_aio import tmx_pico_aio
 
 
-ids = [3]
+ids = [2,3,4,5,6]
 
 # TODO
 ranges = {
@@ -62,7 +62,7 @@ async def save_ranges(the_board):
     for id in ids:
         await updaters["save_offset"](id, 0)
 
-        await updaters["set_single_servo"](id, ranges[id]["home"], 1000)
+        # await updaters["set_single_servo"](id, ranges[id]["home"], 1000)
     await asyncio.sleep(1)
 
     print("done!")

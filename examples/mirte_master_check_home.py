@@ -23,15 +23,15 @@ import aioconsole
 from tmx_pico_aio import tmx_pico_aio
 
 
-ids = [3]
+ids = [2,3,4,5,6]
 
 # TODO
 ranges = {
-    2: {"min": 0, "max": 24000, "home": 20000, "offset": 0},
-    3: {"min": 0, "max": 24000, "home": 20000, "offset": 0},
-    4: {"min": 0, "max": 24000, "home": 20000, "offset": 0},
-    5: {"min": 0, "max": 24000, "home": 20000, "offset": 0},
-    6: {"min": 0, "max": 24000, "home": 20000, "offset": 0},
+    2: {"min": 3400, "max": 21000, "home": 12000, "inv":False},
+    3: {"min": 2832, "max": 20000, "home": 11450, "inv":False},
+    4: {"min": 120, "max": 21000, "home": 11750, "inv":False},
+    5: {"min": 1128, "max": 21672, "home": 12200, "inv":True},
+    6: {"min": 6168, "max": 11224, "home": 9984, "inv":True},
 }
 
 current_pos = {2: 0, 3: 0, 4: 0, 5: 0, 6: 0}
@@ -80,6 +80,8 @@ async def save_ranges(the_board):
                 print("servo", id, "too much off, not saving offset. Rebuild arm!")
                 continue
             print("writing offset for servo", id, "with diff", totalDiff)
+            if(ranges[id]["inv"]):
+                totalDiff = int(-totalDiff/2)
             await updaters["save_offset"](
                 id, totalDiff
             )  # TODO: check negative/positive

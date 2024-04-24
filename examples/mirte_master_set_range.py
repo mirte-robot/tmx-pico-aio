@@ -27,11 +27,11 @@ ids = [2, 3, 4, 5, 6]
 
 # TODO
 ranges = {
-    2: {"min": 0, "max": 24000, "home": 20000},
-    3: {"min": 0, "max": 24000, "home": 20000},
-    4: {"min": 0, "max": 24000, "home": 20000},
-    5: {"min": 0, "max": 24000, "home": 20000},
-    6: {"min": 0, "max": 24000, "home": 20000},
+    2: {"min": 3400, "max": 21000, "home": 12000},
+    3: {"min": 2832, "max": 20000, "home": 11450},
+    4: {"min": 120, "max": 21000, "home": 11750},
+    5: {"min": 1128, "max": 21672, "home": 12200},
+    6: {"min": 6168, "max": 11224, "home": 10524},
 }
 
 
@@ -42,9 +42,7 @@ async def callback(data):
 async def callback_servo_range(id, range):
     pass
 
-
-async def save_ranges(the_board):
-    id = int(await aioconsole.ainput("What servo id? 2-6"))
+async def update_one(the_board, id):
     updaters = await the_board.modules.add_hiwonder_servo(
         0, 0, 1, [id], callback, callback_servo_range=callback_servo_range
     )
@@ -52,9 +50,18 @@ async def save_ranges(the_board):
     if id in ranges:
         await updaters["save_range"](id, ranges[id]["min"], ranges[id]["max"])
         await updaters["save_offset"](id, 0)
-        await asyncio.sleep(1)
+        await asyncio.sleep(0.1)
         await updaters["set_single_servo"](id, ranges[id]["home"], 1000)
+        await asyncio.sleep(1)
 
+async def save_ranges(the_board):
+    id = int(await aioconsole.ainput("What servo id? 2-6"))
+    if(id ==0):
+        for x in range(2,7):
+            print(x)
+            await update_one(the_board, x)
+    else:
+        await update_one(the_board, id)
 
 # get the event loop
 loop = asyncio.get_event_loop()

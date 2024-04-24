@@ -1631,6 +1631,12 @@ class TmxPicoAio:
         if self.shutdown_flag:
             return
         print("shutting down!")
+        try:
+            raise RuntimeError("Why shutdown?")
+        except Exception as ex:
+            # print(command)
+            traceback.print_exception(type(ex), ex, ex.__traceback__)
+
         self.shutdown_flag = True
         if self.hard_shutdown:
             exit(0)

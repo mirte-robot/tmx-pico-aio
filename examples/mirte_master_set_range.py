@@ -42,6 +42,7 @@ async def callback(data):
 async def callback_servo_range(id, range):
     pass
 
+
 async def update_one(the_board, id):
     updaters = await the_board.modules.add_hiwonder_servo(
         0, 0, 1, [id], callback, callback_servo_range=callback_servo_range
@@ -54,14 +55,16 @@ async def update_one(the_board, id):
         await updaters["set_single_servo"](id, ranges[id]["home"], 1000)
         await asyncio.sleep(1)
 
+
 async def save_ranges(the_board):
     id = int(await aioconsole.ainput("What servo id? 2-6"))
-    if(id ==0):
-        for x in range(2,7):
+    if id == 0:
+        for x in range(2, 7):
             print(x)
             await update_one(the_board, x)
     else:
         await update_one(the_board, id)
+
 
 # get the event loop
 loop = asyncio.get_event_loop()

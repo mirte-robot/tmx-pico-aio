@@ -23,15 +23,15 @@ import aioconsole
 from tmx_pico_aio import tmx_pico_aio
 
 
-ids = [2,3,4,5,6]
+ids = [2, 3, 4, 5, 6]
 
 # TODO
 ranges = {
-    2: {"min": 3400, "max": 21000, "home": 12000, "inv":False},
-    3: {"min": 2832, "max": 20000, "home": 11450, "inv":False},
-    4: {"min": 120, "max": 21000, "home": 11750, "inv":False},
-    5: {"min": 1128, "max": 21672, "home": 12200, "inv":True},
-    6: {"min": 6168, "max": 11224, "home": 9984, "inv":True},
+    2: {"min": 3400, "max": 21000, "home": 12000, "inv": False},
+    3: {"min": 2832, "max": 20000, "home": 11450, "inv": False},
+    4: {"min": 120, "max": 21000, "home": 11750, "inv": False},
+    5: {"min": 1128, "max": 21672, "home": 12200, "inv": True},
+    6: {"min": 6168, "max": 11224, "home": 9984, "inv": True},
 }
 
 current_pos = {2: 0, 3: 0, 4: 0, 5: 0, 6: 0}
@@ -65,7 +65,7 @@ async def save_ranges(the_board):
         await updaters["set_single_servo"](id, ranges[id]["home"], 1000)
     await asyncio.sleep(1)
     await updaters["set_enabled_all"](False)  # make it moveable!
-   
+
     print("done!")
 
 

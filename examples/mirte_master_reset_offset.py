@@ -23,7 +23,7 @@ import aioconsole
 from tmx_pico_aio import tmx_pico_aio
 
 
-ids = [2,3,4,5,6]
+ids = [2, 3, 4, 5, 6]
 
 # TODO
 ranges = {

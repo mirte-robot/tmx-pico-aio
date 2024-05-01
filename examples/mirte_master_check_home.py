@@ -23,15 +23,15 @@ import aioconsole
 from tmx_pico_aio import tmx_pico_aio
 
 
-ids = [2,3,4,5,6]
+ids = [2, 3, 4, 5, 6]
 
 # TODO
 ranges = {
-    2: {"min": 3400, "max": 21000, "home": 12000, "inv":False},
-    3: {"min": 2832, "max": 20000, "home": 11450, "inv":False},
-    4: {"min": 120, "max": 21000, "home": 11750, "inv":False},
-    5: {"min": 1128, "max": 21672, "home": 12200, "inv":False},
-    6: {"min": 6168, "max": 11224, "home": 9984, "inv":False},
+    2: {"min": 3400, "max": 21000, "home": 12000, "inv": False},
+    3: {"min": 2832, "max": 20000, "home": 11450, "inv": False},
+    4: {"min": 120, "max": 21000, "home": 11750, "inv": False},
+    5: {"min": 1128, "max": 21672, "home": 12200, "inv": False},
+    6: {"min": 6168, "max": 11224, "home": 9984, "inv": False},
 }
 
 current_pos = {2: 0, 3: 0, 4: 0, 5: 0, 6: 0}
@@ -80,9 +80,7 @@ async def save_ranges(the_board):
                 print("servo", id, "too much off, not saving offset. Rebuild arm!")
                 continue
             print("writing offset for servo", id, "with diff", totalDiff)
-            await updaters["save_offset"](
-                id, totalDiff
-            )
+            await updaters["save_offset"](id, totalDiff)
     print("done!")
 
 

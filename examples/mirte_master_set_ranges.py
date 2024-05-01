@@ -18,7 +18,6 @@
 import asyncio
 import sys
 import time
-import aioconsole
 
 from tmx_pico_aio import tmx_pico_aio
 
@@ -57,14 +56,9 @@ async def update_one(the_board, id):
 
 
 async def save_ranges(the_board):
-    id = int(await aioconsole.ainput("What servo id? 2-6"))
-    if id == 0:
-        for x in range(2, 7):
-            print(x)
-            await update_one(the_board, x)
-    else:
-        await update_one(the_board, id)
-
+    for x in range(2, 7):
+        print(x)
+        await update_one(the_board, x)
 
 # get the event loop
 loop = asyncio.get_event_loop()

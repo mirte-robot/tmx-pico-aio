@@ -60,6 +60,7 @@ async def save_ranges(the_board):
         print(x)
         await update_one(the_board, x)
 
+
 # get the event loop
 loop = asyncio.get_event_loop()
 try:

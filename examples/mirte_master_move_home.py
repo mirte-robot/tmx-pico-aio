@@ -30,8 +30,8 @@ ranges = {
     2: {"min": 3400, "max": 21000, "home": 12000, "inv":False},
     3: {"min": 2832, "max": 20000, "home": 11450, "inv":False},
     4: {"min": 120, "max": 21000, "home": 11750, "inv":False},
-    5: {"min": 1128, "max": 21672, "home": 12200, "inv":False},
-    6: {"min": 6168, "max": 11224, "home": 9984, "inv":False},
+    5: {"min": 1128, "max": 21672, "home": 12200, "inv":True},
+    6: {"min": 6168, "max": 11224, "home": 9984, "inv":True},
 }
 
 current_pos = {2: 0, 3: 0, 4: 0, 5: 0, 6: 0}
@@ -60,29 +60,12 @@ async def save_ranges(the_board):
     )
     await asyncio.sleep(1)
     for id in ids:
-        await updaters["get_offset"](id)
-        await asyncio.sleep(1)
+        # await updaters["get_offset"](id)
+        await asyncio.sleep(0.1)
         await updaters["set_single_servo"](id, ranges[id]["home"], 1000)
     await asyncio.sleep(1)
     await updaters["set_enabled_all"](False)  # make it moveable!
-    _ = await aioconsole.ainput("Move from other position to home, then press enter")
-    # get difference between home and current angle for each servo
-    for id in ids:
-        # print("servo", id, "is at", current_pos[id])
-        if current_pos[id] == 0:
-            print("servo", id, "is not connected")
-            continue
-        diff = current_pos[id] - ranges[id]["home"]
-        totalDiff = diff + ranges[id]["offset"]
-        print("diff", id, diff, totalDiff)
-        if abs(diff) > 200:  # 2 degrees
-            if abs(totalDiff / 24) > 125:
-                print("servo", id, "too much off, not saving offset. Rebuild arm!")
-                continue
-            print("writing offset for servo", id, "with diff", totalDiff)
-            await updaters["save_offset"](
-                id, totalDiff
-            )
+   
     print("done!")
 
 

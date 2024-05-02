@@ -149,7 +149,20 @@ class TmxModules:
                 await self.send_module(sensor_num, [5, id, *data_item])
             except Exception as e:
                 print("err", e)
+        async def save_voltage_range(servo_id, min_v, max_v):
+            min_v *=1000 # convert to mV
+            max_v *=1000
 
+            try:
+                id = servo_ids.index(servo_id)
+                data_item = struct.pack(
+                    ">2H",
+                    min_v,
+                    max_v,
+                )
+                await self.send_module(sensor_num, [9, id, *data_item])
+            except Exception as e:
+                print("err", e)
         async def save_offset(servo_id, offset):
             try:
                 id = servo_ids.index(servo_id)
@@ -186,6 +199,7 @@ class TmxModules:
             "get_range": get_range,
             "save_offset": save_offset,
             "get_offset": get_offset,
+            "save_voltage_range": save_voltage_range,
         }
 
     async def add_shutdown_relay(self, pin, pin_value, time):

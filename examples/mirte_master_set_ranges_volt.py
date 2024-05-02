@@ -53,7 +53,7 @@ async def update_one(the_board, id):
         await asyncio.sleep(0.1)
         await updaters["set_single_servo"](id, ranges[id]["home"], 1000)
         await asyncio.sleep(0.1)
-        await updaters["save_voltage_range"](id, 10.5,14)
+        await updaters["save_voltage_range"](id, 10.5, 14)
         await asyncio.sleep(1)
 
 

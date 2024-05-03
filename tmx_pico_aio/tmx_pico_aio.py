@@ -19,6 +19,7 @@ import asyncio
 import sys
 import time
 import traceback
+from datetime import datetime
 
 from serial.serialutil import SerialException
 from serial.tools import list_ports
@@ -1696,6 +1697,8 @@ class TmxPicoAio:
         counter = 0
         while not self.shutdown_flag:
             ping_diff = ((counter + 256) - self.pingNum) % 256
+            if(ping_diff > 1):
+                print("ping diff", ping_diff, datetime.now())
             if ping_diff > 8:
                 print("incorrect ping from Pico", self.pingNum, counter)
                 await self.shutdown()
@@ -1813,9 +1816,16 @@ class TmxPicoAio:
             # command dictionary
             # noinspection PyArgumentList
             try:  # TODO: check if direct calling is faster or adding it to the event loop is faster
-                self.loop.create_task(self.report_dispatch[report](packet[1:]))
+                self.loop.create_task(self.dispatch_func(report,packet))
             except Exception as e:
                 print("dispatch error:", e)
+
+    async def dispatch_func(self, report, packet):
+        try:
+            # print("dispatching ", self.report_dispatch[report].__name__)
+            await self.report_dispatch[report](packet[1:])
+        except Exception as e:
+            print("dispatch err: ", e)
 
     async def set_scan_delay(self, delay):
         """
@@ -1968,6 +1978,8 @@ class TmxPicoAio:
 
         :returns: number of bytes sent
         """
+        # print(traceback.format_stack()[-2])
+
         # the length of the list is added at the head
         command.insert(0, len(command))
         send_message = bytes(command)

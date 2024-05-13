@@ -17,6 +17,8 @@
 
 import asyncio
 import sys
+import os
+import signal
 import time
 import traceback
 from datetime import datetime
@@ -26,6 +28,7 @@ from serial.tools import list_ports
 
 from tmx_pico_aio.private_constants import PrivateConstants
 from tmx_pico_aio.telemtrix_aio_serial import TelemetrixAioSerial
+from tmx_pico_aio.Watchdog import Watchdog
 
 
 # noinspection PyPep8,PyMethodMayBeStatic,GrazieInspection
@@ -264,7 +267,7 @@ class TmxPicoAio:
         self._module_reporter = None
         self.sensors = tmx_sensors.TmxSensors(self)
         self.modules = tmx_modules.TmxModules(self)
-
+        self.watchdog = None
         print(
             f"TelemetrixRpiPicoAio:  Version {PrivateConstants.TELEMETRIX_VERSION}\n\n"
             f"Copyright (c) 2021 Alan Yorinks All Rights Reserved.\n"
@@ -1629,6 +1632,10 @@ class TmxPicoAio:
         If any exceptions are thrown, they are ignored.
 
         """
+        if self.watchdog:
+            self.watchdog.stop()
+            self.watchdog = None
+
         if self.shutdown_flag:
             return
         print("shutting down!")
@@ -1640,7 +1647,9 @@ class TmxPicoAio:
 
         self.shutdown_flag = True
         if self.hard_shutdown:
-            exit(0)
+            os.kill(
+                os.getpid(), signal.SIGINT
+            )  # very bad way to shutdown, but sys.exit() is caught in all kind of places(asyncio)
         # stop all reporting - both analog and digital
         try:
             if self.serial_port:
@@ -1689,15 +1698,23 @@ class TmxPicoAio:
 
         await cb(cb_list)
 
+    def shutdown_sync(self):
+        if self.hard_shutdown:
+            os.kill(os.getpid(), signal.SIGINT)
+        else:
+            asyncio.run(self.shutdown())
+
     async def ping(
         self,
     ):  # ping the pico at 2Hz, and receive the same value back and a random(at start) value from the pico
         self.pingNum = 0
         self.randomPicoNum = -1
         counter = 0
+        self.watchdog = Watchdog(10, self.shutdown_sync)
+        # Added external (diff thread) watchdog as _send_command can hang (usb issues) and asyncio will not return command for this loop to trigger shutdown
         while not self.shutdown_flag:
             ping_diff = ((counter + 256) - self.pingNum) % 256
-            if(ping_diff > 1):
+            if ping_diff > 1:
                 print("ping diff", ping_diff, datetime.now())
             if ping_diff > 8:
                 print("incorrect ping from Pico", self.pingNum, counter)
@@ -1705,6 +1722,7 @@ class TmxPicoAio:
             counter = (counter + 1) % 256
             await self._send_command([PrivateConstants.PING, counter])
             await asyncio.sleep(0.5)
+            self.watchdog.reset()  # pet the dog
 
     async def _pong_report(self, report):
         self.pingNum = report[0]
@@ -1816,7 +1834,7 @@ class TmxPicoAio:
             # command dictionary
             # noinspection PyArgumentList
             try:  # TODO: check if direct calling is faster or adding it to the event loop is faster
-                self.loop.create_task(self.dispatch_func(report,packet))
+                self.loop.create_task(self.dispatch_func(report, packet))
             except Exception as e:
                 print("dispatch error:", e)
 

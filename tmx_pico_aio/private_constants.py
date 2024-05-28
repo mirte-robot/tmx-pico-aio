@@ -155,3 +155,4 @@ class PrivateConstants:
         PCA9685 = 0
         HIWONDERSERVO = 1
         SHUTDOWN_RELAY = 2
+        TMX_SSD1306 = 3

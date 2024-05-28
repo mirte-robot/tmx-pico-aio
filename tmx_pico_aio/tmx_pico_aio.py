@@ -1999,6 +1999,10 @@ class TmxPicoAio:
         # print(traceback.format_stack()[-2])
 
         # the length of the list is added at the head
+        if(len(command)> 30):
+            print("command too long", len(command))
+            raise RuntimeError("command too long")
+
         command.insert(0, len(command))
         send_message = bytes(command)
         try:

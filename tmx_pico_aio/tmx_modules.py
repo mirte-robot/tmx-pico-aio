@@ -221,8 +221,22 @@ class TmxModules:
             await self.send_module(module_num, [int(enable)])
 
         return trigger_shutdown_relay
+    async def add_tmx_ssd1306(self, i2c_port):
+        async def cb(x):
+            pass
+        module_num = await self.add_module(PrivateConstants.MODULE_TYPES.TMX_SSD1306, [int(i2c_port)], cb)
+        
+        async def send_text(text):
+            text_arr = list(map(ord, text))
+            max_len = 30-4
+            text_arrs = [text_arr[i:i+max_len] for i in range(0,len(text_arr),max_len)]
+            for arr in text_arrs:
+                await self.send_module(module_num, [0, len(arr), *arr])
+            await self.send_module(module_num, [1])
 
+        return {"send_text": send_text}
     async def add_module(self, module_type, module_settings, callback):
+        print(module_settings)
         await self.pico_aio._send_command(
             [PrivateConstants.MODULE_NEW, self.num, module_type.value, *module_settings]
         )
@@ -237,6 +251,7 @@ class TmxModules:
             await cb(report[2:])
 
     async def send_module(self, module_num, data):
+        print(data, len(data))
         await self.pico_aio._send_command(
             [PrivateConstants.MODULE_DATA, module_num, *data]
         )

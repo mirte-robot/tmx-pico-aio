@@ -20,6 +20,7 @@ import sys
 import time
 import struct
 from tmx_pico_aio import tmx_pico_aio
+from PIL import Image, ImageDraw, ImageFont
 
 
 async def ssd1306(my_board):
@@ -30,7 +31,11 @@ async def ssd1306(my_board):
     await asyncio.sleep(0.1)
     funcs = await my_board.modules.add_tmx_ssd1306(i2c_port)
     print(funcs)
-    await funcs["send_text"]("Hoi Martin")
+    file = '/usr/local/src/mirte/mirte-oled-images/images/zoef_logo.png'
+    image_file = Image.open(file)  # open color image
+    image_file = image_file.convert("1", dither=Image.NONE)
+    # self.image(image_file)
+    await funcs["send_image"](image_file)
     # while True:
     #     try:
     await asyncio.sleep(1)

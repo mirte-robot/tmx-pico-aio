@@ -1,8 +1,8 @@
 from tmx_pico_aio.private_constants import PrivateConstants
 from tmx_pico_aio.tmx_pico_aio import TmxPicoAio
 import struct
-
-
+import time
+import asyncio
 class TmxModules:
     def __init__(self, tmx_pico_aio: TmxPicoAio):
         self.pico_aio = tmx_pico_aio
@@ -221,7 +221,10 @@ class TmxModules:
             await self.send_module(module_num, [int(enable)])
 
         return trigger_shutdown_relay
+
     async def add_tmx_ssd1306(self, i2c_port):
+        width = 128
+        height = 64
         async def cb(x):
             pass
         module_num = await self.add_module(PrivateConstants.MODULE_TYPES.TMX_SSD1306, [int(i2c_port)], cb)
@@ -233,8 +236,76 @@ class TmxModules:
             for arr in text_arrs:
                 await self.send_module(module_num, [0, len(arr), *arr])
             await self.send_module(module_num, [1])
+        
+        async def send_image1(image):
+            if image.mode != '1':
+                return
+            start = time.time()
+      
+            buffer = [0]*(width*height)
+            imwidth, imheight = image.size
+            if imwidth != width or imheight !=  height:
+                raise ValueError('Image must be same dimensions as display ({0}x{1}).' \
+                    .format( width,  height))
+            # Grab all the pixels from the image, faster than getpixel.
+            pix = image.load()
+            # Iterate through the memory pages
+            index = 0
+            buffer_flat = []
+            for y in range(height):
 
-        return {"send_text": send_text}
+                for x in range(width):
+                    buffer_flat.append(pix[x, y])
+            # for y in range(height):
+
+            #     for x in range(width):
+            #         print('.'if pix[x, y] else ' ', end='')
+            #     print('')
+            # for z in range(height*width):
+            #     print('.'if buffer_flat[z] else ' ', end='')
+            #     if z%width == 0:
+            #         print('')
+
+            # print(buffer_flat)
+            buffer_e = []
+            for height_block in range(height//8):
+                for x in range(width):
+                    byt = 0
+                    for bit in range(8):
+                        byt = byt << 1
+                        byt |= 1 if buffer_flat[x+(7-bit)*width+ height_block*width*8] else 0
+                        # print(buffer_flat[x*8+bit], byt, bit)
+                    buffer_e.append(byt)
+                # buffer_e.append(x if x < 255 else 0)
+
+
+            # for x in range(width):
+            #     for y in range(height):
+            #         for bit in range(8):
+            #         # buffer[x * height + y] = pix[x,y]
+            #         buffer[y*width +x] = pix[x,y]
+            
+            # done converting
+            
+            # split in 16 bytes packets
+            max_len = 16
+            # buffer_e = [255]*1024
+            buff_arrs = [buffer_e[i:i+max_len] for i in range(0,len(buffer_e),max_len)]
+            i = 0
+            # print(buff_arrs)
+            # buff_arrs = buff_arrs[0:200]
+            # buff_arrs = 
+            
+            end = time.time()
+            print("calc", end - start)
+            for arr in buff_arrs:
+                await self.send_module(module_num, [2, i, *arr]) # send BINARY, index and 16 bytes
+                # await asyncio.sleep(0.1)
+                # print(i,len(arr), arr)
+                i+=1
+            
+            await self.send_module(module_num, [3]) # send binary done
+        return {"send_text": send_text, "send_image":send_image1}
     async def add_module(self, module_type, module_settings, callback):
         print(module_settings)
         await self.pico_aio._send_command(
@@ -251,7 +322,7 @@ class TmxModules:
             await cb(report[2:])
 
     async def send_module(self, module_num, data):
-        print(data, len(data))
+        # print(data, len(data))
         await self.pico_aio._send_command(
             [PrivateConstants.MODULE_DATA, module_num, *data]
         )

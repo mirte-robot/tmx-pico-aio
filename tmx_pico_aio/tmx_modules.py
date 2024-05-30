@@ -236,7 +236,7 @@ class TmxModules:
 
         return {"send_text": send_text}
     async def add_module(self, module_type, module_settings, callback):
-        print(module_settings)
+        # print(module_settings)
         await self.pico_aio._send_command(
             [PrivateConstants.MODULE_NEW, self.num, module_type.value, *module_settings]
         )
@@ -251,7 +251,7 @@ class TmxModules:
             await cb(report[2:])
 
     async def send_module(self, module_num, data):
-        print(data, len(data))
+        # print(data, len(data))
         await self.pico_aio._send_command(
             [PrivateConstants.MODULE_DATA, module_num, *data]
         )

@@ -3,6 +3,8 @@ from tmx_pico_aio.tmx_pico_aio import TmxPicoAio
 import struct
 import time
 import asyncio
+
+
 class TmxModules:
     def __init__(self, tmx_pico_aio: TmxPicoAio):
         self.pico_aio = tmx_pico_aio
@@ -225,9 +227,12 @@ class TmxModules:
     async def add_tmx_ssd1306(self, i2c_port):
         width = 128
         height = 64
-        
-        events =  [0 for n in range(0, 4)] # just 4 types of messages, making this function not reentrant
-        events_data = [[0] for n in range(0,4)]
+
+        events = [
+            0 for n in range(0, 4)
+        ]  # just 4 types of messages, making this function not reentrant
+        events_data = [[0] for n in range(0, 4)]
+
         async def cb(x):
             print(x)
             try:
@@ -236,27 +241,31 @@ class TmxModules:
                 events_data[oled_msg_type] = x
             except Exception as e:
                 pass
-            
-        module_num = await self.add_module(PrivateConstants.MODULE_TYPES.TMX_SSD1306, [int(i2c_port)], cb)
-        
+
+        module_num = await self.add_module(
+            PrivateConstants.MODULE_TYPES.TMX_SSD1306, [int(i2c_port)], cb
+        )
+
         # easy enum
         TEXT = 0
         TEXT_WRITE = 1
         BINARY = 2
-        BINARY_WRITE =3
+        BINARY_WRITE = 3
 
         async def send_text(text):
             text = text.encode("ascii", errors="ignore").decode()
-            text = text[0:150] # truncate to 150 chars
+            text = text[0:150]  # truncate to 150 chars
             text_arr = list(map(ord, text))
-            max_len = 30-4
-            text_arrs = [text_arr[i:i+max_len] for i in range(0,len(text_arr),max_len)]
+            max_len = 30 - 4
+            text_arrs = [
+                text_arr[i : i + max_len] for i in range(0, len(text_arr), max_len)
+            ]
             event = asyncio.Event()
             events[TEXT_WRITE] = event
             for arr in text_arrs:
                 await self.send_module(module_num, [TEXT, len(arr), *arr])
             await self.send_module(module_num, [TEXT_WRITE])
-            
+
             # waiting for the acknowledge after writing to the real oled
             try:
                 await asyncio.wait_for(
@@ -270,24 +279,29 @@ class TmxModules:
 
             data = events_data[TEXT_WRITE]
 
-            if data[1] > 200:  # signed -> unsigned number, str can be max 150, 255==error
+            if (
+                data[1] > 200
+            ):  # signed -> unsigned number, str can be max 150, 255==error
                 print("Write failed oled send_write")
                 return False
-            if(data[1]!=len(text)):
+            if data[1] != len(text):
                 print("diff len str")
             return True
-        
+
         async def send_image(image):
-            if image.mode != '1':
+            if image.mode != "1":
                 return False
             start = time.time()
             event = asyncio.Event()
             events[BINARY_WRITE] = event
-            buffer = [0]*(width*height)
+            buffer = [0] * (width * height)
             imwidth, imheight = image.size
-            if imwidth != width or imheight !=  height:
-                raise ValueError('Image must be same dimensions as display ({0}x{1}).' \
-                    .format( width,  height))
+            if imwidth != width or imheight != height:
+                raise ValueError(
+                    "Image must be same dimensions as display ({0}x{1}).".format(
+                        width, height
+                    )
+                )
             pix = image.load()
             index = 0
             buffer_flat = []
@@ -296,22 +310,32 @@ class TmxModules:
                 for x in range(width):
                     buffer_flat.append(pix[x, y])
             buffer_e = []
-            for height_block in range(height//8):
+            for height_block in range(height // 8):
                 for x in range(width):
                     byt = 0
                     for bit in range(8):
                         byt = byt << 1
-                        byt |= 1 if buffer_flat[x+(7-bit)*width+ height_block*width*8] else 0
+                        byt |= (
+                            1
+                            if buffer_flat[
+                                x + (7 - bit) * width + height_block * width * 8
+                            ]
+                            else 0
+                        )
                     buffer_e.append(byt)
             max_len = 16
-            buff_arrs = [buffer_e[i:i+max_len] for i in range(0,len(buffer_e),max_len)]
+            buff_arrs = [
+                buffer_e[i : i + max_len] for i in range(0, len(buffer_e), max_len)
+            ]
             i = 0
             for arr in buff_arrs:
-                await self.send_module(module_num, [BINARY, i, *arr]) # send BINARY, index and 16 bytes
-                i+=1
-            await self.send_module(module_num, [BINARY_WRITE]) # send binary done
+                await self.send_module(
+                    module_num, [BINARY, i, *arr]
+                )  # send BINARY, index and 16 bytes
+                i += 1
+            await self.send_module(module_num, [BINARY_WRITE])  # send binary done
 
-             # waiting for the acknowledge after writing to the real oled
+            # waiting for the acknowledge after writing to the real oled
             try:
                 await asyncio.wait_for(
                     event.wait(), 1
@@ -327,11 +351,12 @@ class TmxModules:
             if data[1] > 200:  # 255==error
                 print("Write failed oled send_write img")
                 return False
-            if(data[1]!=1):
+            if data[1] != 1:
                 print("err ack")
             return True
 
-        return {"send_text": send_text, "send_image":send_image}
+        return {"send_text": send_text, "send_image": send_image}
+
     async def add_module(self, module_type, module_settings, callback):
         print(module_settings)
         await self.pico_aio._send_command(

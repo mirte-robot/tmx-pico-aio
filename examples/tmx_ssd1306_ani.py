@@ -33,26 +33,25 @@ async def ssd1306(my_board):
     print(funcs)
     imgs = []
     for x in range(7):
-                file = f'/usr/local/src/mirte/mirte-oled-images/animations/eye/eye_{x}.png'
-                image_file = Image.open(file)  # open color image
-                image_file = image_file.convert("1", dither=Image.NONE)
-                imgs.append(image_file)
+        file = f"/usr/local/src/mirte/mirte-oled-images/animations/eye/eye_{x}.png"
+        image_file = Image.open(file)  # open color image
+        image_file = image_file.convert("1", dither=Image.NONE)
+        imgs.append(image_file)
     while True:
         start = time.time()
         for img in imgs:
 
-       
-                # self.image(image_file)
-                await funcs["send_image"](img)
+            # self.image(image_file)
+            await funcs["send_image"](img)
         end = time.time()
         print(end - start)
 
     # while True:
     #     try:
     await asyncio.sleep(1)
-        # except (KeyboardInterrupt, RuntimeError):
-        #     await my_board.shutdown()
-        #     sys.exit(0)
+    # except (KeyboardInterrupt, RuntimeError):
+    #     await my_board.shutdown()
+    #     sys.exit(0)
 
 
 # get the event loop

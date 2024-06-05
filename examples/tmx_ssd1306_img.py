@@ -31,7 +31,7 @@ async def ssd1306(my_board):
     await asyncio.sleep(0.1)
     funcs = await my_board.modules.add_tmx_ssd1306(i2c_port)
     print(funcs)
-    file = '/usr/local/src/mirte/mirte-oled-images/images/zoef_logo.png'
+    file = "/usr/local/src/mirte/mirte-oled-images/images/zoef_logo.png"
     image_file = Image.open(file)  # open color image
     image_file = image_file.convert("1", dither=Image.NONE)
     # self.image(image_file)
@@ -39,9 +39,9 @@ async def ssd1306(my_board):
     # while True:
     #     try:
     await asyncio.sleep(1)
-        # except (KeyboardInterrupt, RuntimeError):
-        #     await my_board.shutdown()
-        #     sys.exit(0)
+    # except (KeyboardInterrupt, RuntimeError):
+    #     await my_board.shutdown()
+    #     sys.exit(0)
 
 
 # get the event loop

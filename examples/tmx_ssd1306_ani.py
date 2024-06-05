@@ -20,6 +20,7 @@ import sys
 import time
 import struct
 from tmx_pico_aio import tmx_pico_aio
+from PIL import Image, ImageDraw, ImageFont
 
 
 async def ssd1306(my_board):
@@ -30,20 +31,27 @@ async def ssd1306(my_board):
     await asyncio.sleep(0.1)
     funcs = await my_board.modules.add_tmx_ssd1306(i2c_port)
     print(funcs)
-    await funcs["send_text"](
-        "Hoi Martinhjklsdfjkladfsjkladfsjkladfjklsljkadfsjklfsdajkladfsjkl"
-    )
-
-    # await funcs["send_text"]("Hoi Martin")
-    i = 0
+    imgs = []
+    for x in range(7):
+        file = f"/usr/local/src/mirte/mirte-oled-images/animations/eye/eye_{x}.png"
+        image_file = Image.open(file)  # open color image
+        image_file = image_file.convert("1", dither=Image.NONE)
+        imgs.append(image_file)
     while True:
-        try:
-            i += 1
-            await asyncio.sleep(1)
-            await funcs["send_text"]("Hoi Martin" + str(i))
-        except (KeyboardInterrupt, RuntimeError):
-            await my_board.shutdown()
-            sys.exit(0)
+        start = time.time()
+        for img in imgs:
+
+            # self.image(image_file)
+            await funcs["send_image"](img)
+        end = time.time()
+        print(end - start)
+
+    # while True:
+    #     try:
+    await asyncio.sleep(1)
+    # except (KeyboardInterrupt, RuntimeError):
+    #     await my_board.shutdown()
+    #     sys.exit(0)
 
 
 # get the event loop

@@ -29,14 +29,19 @@ async def ssd1306(my_board):
     await my_board.set_pin_mode_i2c(i2c_port, sda, scl)
     await asyncio.sleep(0.1)
     funcs = await my_board.modules.add_tmx_ssd1306(i2c_port)
-    print(funcs)
-    await funcs["send_text"]("Hoi Martin")
-    # while True:
-    #     try:
-    await asyncio.sleep(1)
-        # except (KeyboardInterrupt, RuntimeError):
-        #     await my_board.shutdown()
-        #     sys.exit(0)
+    print(funcs)    
+    await funcs["send_text"]("Hoi Martinhjklsdfjkladfsjkladfsjkladfjklsljkadfsjklfsdajkladfsjkl")
+
+    # await funcs["send_text"]("Hoi Martin")
+    i=0
+    while True:
+        try:
+            i+=1
+            await asyncio.sleep(1)
+            await funcs["send_text"]("Hoi Martin"+str(i))
+        except (KeyboardInterrupt, RuntimeError):
+            await my_board.shutdown()
+            sys.exit(0)
 
 
 # get the event loop

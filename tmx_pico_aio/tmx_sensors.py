@@ -9,39 +9,14 @@ class TmxSensors:
         self.num = 0
         self.callbacks = []
 
-    async def add_adxl345(self, i2c_port, callback):
-        await self.add_sensor(
-            PrivateConstants.SENSOR_TYPES.ADXL345, [i2c_port], callback
-        )
+    def __getattribute__(self, name):
+        if name.startswith("add_"):
+            print("Sensor not supported in this version.")
+        return None
 
     async def add_veml6040(self, i2c_port, callback):
         await self.add_sensor(
             PrivateConstants.SENSOR_TYPES.VEML6040, [i2c_port], callback
-        )
-
-    async def add_vl53(self, i2c_port, callback):
-        await self.add_sensor(
-            PrivateConstants.SENSOR_TYPES.TOF_VL53, [i2c_port], callback
-        )
-
-    async def add_mpu9250(self, i2c_port, callback):
-        await self.add_sensor(
-            PrivateConstants.SENSOR_TYPES.MPU_9250, [i2c_port], callback
-        )
-
-    async def add_hx711(self, out, sck, callback):
-        await self.add_sensor(
-            PrivateConstants.SENSOR_TYPES.LOAD_CELL, [out, sck], callback
-        )
-
-    async def add_gps(self, rx, tx, uart_channel, callback):
-        await self.add_sensor(
-            PrivateConstants.SENSOR_TYPES.GPS, [rx, tx, uart_channel], callback
-        )
-
-    async def add_ina226(self, i2c_port, callback, addr=0x40):
-        await self.add_sensor(
-            PrivateConstants.SENSOR_TYPES.INA226, [i2c_port, addr], callback
         )
 
     async def add_sensor(self, sensor_type, sensor_settings, callback):

@@ -258,7 +258,7 @@ class TmxPicoAio:
         self.neopixels_initiated = False
 
         self._sensor_reporter = None
-        self._module_reporter = None
+        # self._module_reporter = None
         self.sensors = tmx_sensors.TmxSensors(self)
         self.modules = tmx_modules.TmxModules(self)
 
@@ -1694,7 +1694,7 @@ class TmxPicoAio:
         self.randomPicoNum = -1
         counter = 0
         while not self.shutdown_flag:
-            if ((counter + 256) - self.pingNum) % 256 > 2:
+            if ((counter + 256) - self.pingNum) % 256 > 10:
                 print("incorrect ping from Pico", self.pingNum, counter)
                 await self.shutdown()
             counter = (counter + 1) % 256
@@ -1718,10 +1718,7 @@ class TmxPicoAio:
 
     async def _module_report(self, report):
         """ """
-        if self._module_reporter is None:
-            print("No module reporter installed")
-            return
-        await self._module_reporter(report)
+        print("modules not supported in this version")
 
     async def _spi_report(self, report):
         """

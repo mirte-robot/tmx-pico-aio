@@ -9,7 +9,7 @@ class TmxSensors:
         self.num = 0
         self.callbacks = []
 
-    def __getattribute__(self, name):
+    def __getattr__(self, name):
         if name.startswith("add_"):
             print("Sensor not supported in this version.")
         return None

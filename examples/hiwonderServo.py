@@ -1,5 +1,5 @@
 """
- Copyright (c) 2021 Alan Yorinks All rights reserved.
+ Copyright (c) 2023 Arend-Jan van Hilten
 
  This program is free software; you can redistribute it and/or
  modify it under the terms of the GNU AFFERO GENERAL PUBLIC LICENSE
@@ -13,9 +13,6 @@
  You should have received a copy of the GNU AFFERO GENERAL PUBLIC LICENSE
  along with this library; if not, write to the Free Software
  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-
- DHT support courtesy of Martyn Wheeler
- Based on the DHTNew library - https://github.com/RobTillaart/DHTNew
 """
 
 import asyncio
@@ -24,25 +21,39 @@ import time
 
 from tmx_pico_aio import tmx_pico_aio
 
-"""
-Attach a pin to a servo and move it about.
-"""
 
-# some globals
-SERVO_PIN = 16
+async def callback(data):
+    for d in data:
+        print(d)
 
 
 async def move_servo(the_board):
     try:
-        await the_board.set_pin_mode_servo(SERVO_PIN, 1000, 2000)
-        time.sleep(0.2)
-        await the_board.servo_write(SERVO_PIN, 90)
-        time.sleep(1)
-        await the_board.servo_write(SERVO_PIN, 0)
-        time.sleep(1)
-        await the_board.servo_write(SERVO_PIN, 180)
-        time.sleep(1)
-        await the_board.servo_write(SERVO_PIN, 90)
+        updaters = await the_board.modules.add_hiwonder_servo(
+            1, 4, 5, [3, 4, 5], callback
+        )
+        set_single_servo = updaters["set_single_servo"]
+        set_multiple_servos = updaters["set_multiple_servos"]
+        await asyncio.sleep(4)
+        # await set_single_servo(4, 2000, 1000)
+
+        # await asyncio.sleep(4)
+        # await set_single_servo(4, 4000, 1000)
+        # await asyncio.sleep(2)
+        # await set_single_servo(3, 10000, 1000)
+
+        # await asyncio.sleep(4)
+        # await set_single_servo(3, 13000, 1000)
+        # await asyncio.sleep(5)
+        # # will send the commands to all and then start the servos
+        # await set_multiple_servos(
+        #     [
+        #         {"id": 3, "angle": 10000, "time": 2000},
+        #         {"id": 4, "angle": 2000, "time": 3000},
+        #     ]
+        # )
+        await asyncio.sleep(5)
+
     except KeyboardInterrupt:
         await the_board.shutdown()
         sys.exit(0)

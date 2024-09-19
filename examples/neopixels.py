@@ -55,11 +55,12 @@ async def neopixel_demo(my_board):
         try:
             for pixel in range(8):
                 await my_board.neo_pixel_set_value(pixel, 0, 0, 64, True)
-                await asyncio.sleep(.1)
+                await asyncio.sleep(0.1)
                 await my_board.neopixel_clear()
         except (KeyboardInterrupt, RuntimeError):
             await my_board.shutdown()
             sys.exit(0)
+
 
 try:
     # get the event loop
@@ -74,5 +75,3 @@ except KeyboardInterrupt:
     sys.exit(0)
 except RuntimeError:
     sys.exit(0)
-
-

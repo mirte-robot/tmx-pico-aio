@@ -39,36 +39,16 @@ async def the_callback(data):
     y = twos_comp(data[3] << 8 | data[2], 16) * 0.004
     z = twos_comp(data[5] << 8 | data[4], 16) * 0.004
 
-    print(f"x: {x} y: {y} z: {z}")
-    print()
+    print(f"x: {x:.2f} y: {y:.2f} z: {z:.2f}")
 
 
 async def adxl345(my_board):
-    # setup adxl345
-    # device address = 83
     await my_board.set_pin_mode_i2c(0, 4, 5)
     await asyncio.sleep(0.1)
-
-    # set up power and control register
-    await my_board.i2c_write(83, [45, 0])
-    await asyncio.sleep(0.001)
-    await my_board.i2c_write(83, [45, 8])
-    await asyncio.sleep(0.001)
-    # set up the data format register
-    await my_board.i2c_write(83, [49, 8])  # 0b0000_1000 = FULL_RES, +- 2g
-    await asyncio.sleep(0.001)
-    # await my_board.i2c_write(83, [49, 3]) # why set the same register?
-    # await asyncio.sleep(.001)
+    await my_board.sensors.add_adxl345(the_callback)
     while True:
-        # read 6 bytes from the data register
         try:
-            out = await my_board.i2c_read(83, 50, 6)  # takes 2ms
-            if not out:
-                print("failed read")
-                await my_board.shutdown()
-                sys.exit(0)
-            the_callback(out[5:])
-            await asyncio.sleep(0.001)
+            await asyncio.sleep(1)
         except (KeyboardInterrupt, RuntimeError):
             await my_board.shutdown()
             sys.exit(0)
@@ -87,7 +67,6 @@ try:
     # start the main function
     loop.run_until_complete(adxl345(board))
     print("done axl")
-    # loop.run_until_complete(board.reset_board())
 except KeyboardInterrupt:
     loop.run_until_complete(board.shutdown())
     sys.exit(0)

@@ -43,9 +43,9 @@ async def the_device_callback(report):
     :param report: [SPI_REPORT, SPI_PORT, Number of bytes, device id]
     """
     if report[3] == 0x71:
-        print('MPU9250 Device ID confirmed.')
+        print("MPU9250 Device ID confirmed.")
     else:
-        print(f'Unexpected device ID: {report[3]}')
+        print(f"Unexpected device ID: {report[3]}")
 
 
 # noinspection GrazieInspection
@@ -55,9 +55,11 @@ async def accel_callback(report):
     :param report: [SPI_REPORT, SPI_PORT, Number of bytes, AX-msb, AX-lsb
     AY-msb, AY-lsb, AX-msb, AX-lsb]
     """
-    print(f"AX = {int.from_bytes(report[3:5], byteorder='big', signed=True)}  "
-          f"AY = {int.from_bytes(report[5:7], byteorder='big', signed=True)}  "
-          f"AZ = {int.from_bytes(report[7:9], byteorder='big', signed=True)}  ")
+    print(
+        f"AX = {int.from_bytes(report[3:5], byteorder='big', signed=True)}  "
+        f"AY = {int.from_bytes(report[5:7], byteorder='big', signed=True)}  "
+        f"AZ = {int.from_bytes(report[7:9], byteorder='big', signed=True)}  "
+    )
 
 
 async def gyro_callback(report):
@@ -68,9 +70,11 @@ async def gyro_callback(report):
     :param report: [SPI_REPORT, SPI_PORT, Number of bytes, GX-msb, GX-lsb
     GY-msb, GY-lsb, GX-msb, GX-lsb]
     """
-    print(f"GX = {int.from_bytes(report[3:5], byteorder='big', signed=True)}  "
-          f"GY = {int.from_bytes(report[5:7], byteorder='big', signed=True)}  "
-          f"GZ = {int.from_bytes(report[7:9], byteorder='big', signed=True)}  ")
+    print(
+        f"GX = {int.from_bytes(report[3:5], byteorder='big', signed=True)}  "
+        f"GY = {int.from_bytes(report[5:7], byteorder='big', signed=True)}  "
+        f"GZ = {int.from_bytes(report[7:9], byteorder='big', signed=True)}  "
+    )
 
 
 # This is a utility function to read SPI data
@@ -92,14 +96,14 @@ async def read_data_from_device(register, number_of_bytes, callback):
 
     # select the register
     await pico.spi_write_blocking([data], 0)
-    await asyncio.sleep(.1)
+    await asyncio.sleep(0.1)
 
     # read the data back
     await pico.spi_read_blocking(number_of_bytes, 0, call_back=callback)
 
     # deactivate chip select
     await pico.spi_cs_control(5, 1)
-    await asyncio.sleep(.1)
+    await asyncio.sleep(0.1)
 
 
 # Convenience values for the pins.
@@ -121,27 +125,26 @@ FREQ = 500000
 
 async def read_mpu9250():
     # initialize the device
-    await pico.set_pin_mode_spi(SPI_PORT, MISO, MOSI, CLK,
-                          FREQ, CS, qualify_pins=False)
+    await pico.set_pin_mode_spi(SPI_PORT, MISO, MOSI, CLK, FREQ, CS, qualify_pins=False)
     # reset the device
     await pico.spi_cs_control(CS_PIN, 0)
     await pico.spi_write_blocking([0x6B, 0], SPI_PORT)
     await pico.spi_cs_control(CS_PIN, 1)
 
-    await asyncio.sleep(.3)
+    await asyncio.sleep(0.3)
 
     # get the device ID
     await read_data_from_device(0x75, 1, the_device_callback)
-    await asyncio.sleep(.3)
+    await asyncio.sleep(0.3)
 
     while True:
         try:
             # get the acceleration values
-            await read_data_from_device(0x3b | 0x80, 6, accel_callback)
+            await read_data_from_device(0x3B | 0x80, 6, accel_callback)
 
             # get the gyro values
             await read_data_from_device(0x43 | 0x80, 6, gyro_callback)
-            await asyncio.sleep(.1)
+            await asyncio.sleep(0.1)
         except KeyboardInterrupt:
             await pico.shutdown()
             sys.exit(0)
@@ -163,5 +166,3 @@ except KeyboardInterrupt:
         sys.exit(0)
     except RuntimeError:
         sys.exit(0)
-
-

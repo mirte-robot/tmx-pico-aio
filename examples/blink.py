@@ -17,6 +17,7 @@
  DHT support courtesy of Martyn Wheeler
  Based on the DHTNew library - https://github.com/RobTillaart/DHTNew
 """
+
 import asyncio
 import sys
 
@@ -38,10 +39,10 @@ async def blink(my_board, pin):
 
     # toggle the pin 4 times and exit
     for x in range(4):
-        print('ON')
+        print("ON")
         await my_board.digital_write(pin, 1)
         await asyncio.sleep(1)
-        print('OFF')
+        print("OFF")
         await my_board.digital_write(pin, 0)
         await asyncio.sleep(1)
 
@@ -62,5 +63,3 @@ except KeyboardInterrupt:
     sys.exit(0)
 except RuntimeError:
     sys.exit(0)
-
-

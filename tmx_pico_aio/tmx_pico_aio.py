@@ -34,13 +34,18 @@ class TmxPicoAio:
     API for the Raspberry Pi Pico using Python asyncio.
     """
 
-    def __init__(self, com_port=None, pico_instance_id=None,
-                 sleep_tune=0.000001,
-                 autostart=True,
-                 loop=None,
-                 shutdown_on_exception=True,
-                 close_loop_on_shutdown=True,
-                 reset_on_shutdown=True, allow_i2c_errors=False):
+    def __init__(
+        self,
+        com_port=None,
+        pico_instance_id=None,
+        sleep_tune=0.000001,
+        autostart=True,
+        loop=None,
+        shutdown_on_exception=True,
+        close_loop_on_shutdown=True,
+        reset_on_shutdown=True,
+        allow_i2c_errors=False,
+    ):
         """
 
         :param com_port: e.g. COM3 or /dev/ttyACM0.
@@ -67,7 +72,7 @@ class TmxPicoAio:
                                        error occurs
 
         :param reset_on_shutdown: Reset the board upon shutdown
-        
+
         :param allow_i2c_errors: Allow I2C errors or raise a RuntimeError
         """
 
@@ -78,8 +83,10 @@ class TmxPicoAio:
                 if python_version[2] >= 3:
                     pass
             else:
-                raise RuntimeError("ERROR: Python 3.8.3 or greater is "
-                                   "required for use of this program.")
+                raise RuntimeError(
+                    "ERROR: Python 3.8.3 or greater is "
+                    "required for use of this program."
+                )
 
         # save input parameters as instance variables
         self.com_port = com_port
@@ -95,6 +102,7 @@ class TmxPicoAio:
             self.loop = asyncio.get_event_loop()
         else:
             self.loop = loop
+            self.close_loop_on_shutdown = False
 
         # The report_dispatch dictionary is used to process
         # incoming report messages by looking up the report message
@@ -104,30 +112,50 @@ class TmxPicoAio:
 
         # To add a command to the command dispatch table, append here.
         self.report_dispatch.update(
-            {PrivateConstants.LOOP_COMMAND: self._report_loop_data})
+            {PrivateConstants.LOOP_COMMAND: self._report_loop_data}
+        )
         self.report_dispatch.update(
-            {PrivateConstants.DEBUG_PRINT: self._report_debug_data})
+            {PrivateConstants.DEBUG_PRINT: self._report_debug_data}
+        )
         self.report_dispatch.update(
-            {PrivateConstants.DIGITAL_REPORT: self._digital_message})
+            {PrivateConstants.DIGITAL_REPORT: self._digital_message}
+        )
         self.report_dispatch.update(
-            {PrivateConstants.ANALOG_REPORT: self._analog_message})
+            {PrivateConstants.ANALOG_REPORT: self._analog_message}
+        )
         self.report_dispatch.update(
-            {PrivateConstants.UNIQUE_ID_REPORT: self._report_unique_id})
+            {PrivateConstants.UNIQUE_ID_REPORT: self._report_unique_id}
+        )
         self.report_dispatch.update(
-            {PrivateConstants.FIRMWARE_REPORT: self._report_firmware_version})
+            {PrivateConstants.FIRMWARE_REPORT: self._report_firmware_version}
+        )
         self.report_dispatch.update(
-            {PrivateConstants.SERVO_UNAVAILABLE: self._servo_unavailable})
+            {PrivateConstants.SERVO_UNAVAILABLE: self._servo_unavailable}
+        )
         self.report_dispatch.update(
-            {PrivateConstants.I2C_READ_REPORT: self._i2c_read_report})
+            {PrivateConstants.I2C_READ_REPORT: self._i2c_read_report}
+        )
         self.report_dispatch.update(
-            {PrivateConstants.I2C_WRITE_FAILED: self._i2c_write_report})
+            {PrivateConstants.I2C_WRITE_FAILED: self._i2c_write_report}
+        )
         self.report_dispatch.update(
-            {PrivateConstants.I2C_READ_FAILED: self._i2c_read_failed})
+            {PrivateConstants.I2C_READ_FAILED: self._i2c_read_failed}
+        )
         self.report_dispatch.update(
-            {PrivateConstants.SONAR_DISTANCE: self._sonar_distance_report})
+            {PrivateConstants.SONAR_DISTANCE: self._sonar_distance_report}
+        )
         self.report_dispatch.update({PrivateConstants.DHT_REPORT: self._dht_report})
         self.report_dispatch.update({PrivateConstants.SPI_REPORT: self._spi_report})
-        self.report_dispatch.update({PrivateConstants.ENCODER_REPORT: self._encoder_report})
+        self.report_dispatch.update(
+            {PrivateConstants.ENCODER_REPORT: self._encoder_report}
+        )
+        self.report_dispatch.update(
+            {PrivateConstants.SENSOR_REPORT: self._sensor_report}
+        )
+        self.report_dispatch.update({PrivateConstants.PONG_REPORT: self._pong_report})
+        self.report_dispatch.update(
+            {PrivateConstants.MODULE_REPORT: self._module_report}
+        )
         # up to 16 pwm pins may be simultaneously active
         self.pwm_active_count = 0
 
@@ -194,8 +222,9 @@ class TmxPicoAio:
         # This dictionary is a list of gpio pins updated with the pin mode when a pin mode
         # is set.
         # It is created initially using a dictionary comprehension.
-        self.pico_pins = {gpio_pin: PrivateConstants.AT_MODE_NOT_SET for gpio_pin in
-                          range(23)}
+        self.pico_pins = {
+            gpio_pin: PrivateConstants.AT_MODE_NOT_SET for gpio_pin in range(23)
+        }
 
         # skip over unavailable pins
         for pin in range(25, 29):
@@ -211,14 +240,13 @@ class TmxPicoAio:
 
         self.i2c_write_message_counter = 0
         self.i2c_write_message_waiters = [0 for n in range(0, 255)]
-        self.i2c_write_message_data = [[] for n in range(0,255)]
+        self.i2c_write_message_data = [[] for n in range(0, 255)]
 
         self.i2c_read_message_counter = 0
         self.i2c_read_message_waiters = [0 for n in range(0, 255)]
-        self.i2c_read_message_data = [[] for n in range(0,255)]
+        self.i2c_read_message_data = [[] for n in range(0, 255)]
         # create a dictionary that holds all the servo ranges
-        self.servo_ranges = {gpio_pin: [1000, 2000] for gpio_pin in
-                             range(23)}
+        self.servo_ranges = {gpio_pin: [1000, 2000] for gpio_pin in range(23)}
 
         # skip over unavailable pins
         for gpio_pin in range(25, 29):
@@ -229,8 +257,15 @@ class TmxPicoAio:
 
         self.neopixels_initiated = False
 
-        print(f"TelemetrixRpiPicoAio:  Version {PrivateConstants.TELEMETRIX_VERSION}\n\n"
-              f"Copyright (c) 2021 Alan Yorinks All Rights Reserved.\n")
+        self._sensor_reporter = None
+        # self._module_reporter = None
+        self.sensors = tmx_sensors.TmxSensors(self)
+        self.modules = tmx_modules.TmxModules(self)
+
+        print(
+            f"TelemetrixRpiPicoAio:  Version {PrivateConstants.TELEMETRIX_VERSION}\n\n"
+            f"Copyright (c) 2021 Alan Yorinks All Rights Reserved.\n"
+        )
 
         if autostart:
             self.loop.run_until_complete(self.start_aio())
@@ -244,7 +279,7 @@ class TmxPicoAio:
 
         Use this method if you wish to start TelemetrixRPiPicoAIO manually from
         an asyncio function.
-         """
+        """
         self.the_task = self.loop.create_task(self._pico_report_dispatcher())
         if not self.com_port:
             # user did not specify a com_port
@@ -262,32 +297,37 @@ class TmxPicoAio:
                     await self.shutdown()
 
             if self.com_port:
-                print(f'Telemetrix4AIO found and connected to {self.com_port}')
+                print(f"Telemetrix4AIO found and connected to {self.com_port}")
 
                 # no com_port found - raise a runtime exception
             else:
                 if self.shutdown_on_exception:
                     await self.shutdown()
-                raise RuntimeError('No Pico Found or User Aborted Program')
+                raise RuntimeError("No Pico Found or User Aborted Program")
 
-        print('Retrieving pico ID...')
+        print("Retrieving pico ID...")
         await self._get_pico_id()
 
         # get Telemetrix4RPiPico firmware version and print it
         firmware_version = await self._get_firmware_version()
         if not firmware_version:
-            print('*** Firmware Version retrieval timed out. ***')
-            print('\nDo you have Pico connectivity and do you have the ')
-            print('Telemetrix4RPiPico sketch uploaded to the board and are connected')
-            print('to the correct serial port.\n')
-            print('To see a list of serial ports, type: '
-                  '"list_serial_ports" in your console.')
+            print("*** Firmware Version retrieval timed out. ***")
+            print("\nDo you have Pico connectivity and do you have the ")
+            print("Telemetrix4RPiPico sketch uploaded to the board and are connected")
+            print("to the correct serial port.\n")
+            print(
+                "To see a list of serial ports, type: "
+                '"list_serial_ports" in your console.'
+            )
             if self.shutdown_on_exception:
                 await self.shutdown()
             raise RuntimeError
         else:
-            print(f'Telemetrix4RPiPico Version Number: {firmware_version[0]}.'
-                  f'{firmware_version[1]}')
+            print(
+                f"Telemetrix4RPiPico Version Number: {firmware_version[0]}."
+                f"{firmware_version[1]}"
+            )
+        asyncio.create_task(self.ping())
 
     async def _find_pico(self):
         """
@@ -298,17 +338,23 @@ class TmxPicoAio:
         # a list of serial ports to be checked
         serial_ports = []
 
-        print('Opening all potential serial ports...')
+        print("Opening all potential serial ports...")
         the_ports_list = list_ports.comports()
         for port in the_ports_list:
             if port.pid is None:
                 continue
-            if not ((port.pid == 10 and port.vid == 11914) or (port.pid == 29987 and port.vid == 6790)):
+            if not (
+                (port.pid == 10 and port.vid == 11914)
+                or (port.pid == 29987 and port.vid == 6790)
+            ):
                 continue
             try:
-                self.serial_port = TelemetrixAioSerial(port.device, 115200,
-                                                       telemetrix_aio_instance=self,
-                                                       close_loop_on_error=self.close_loop_on_shutdown)
+                self.serial_port = TelemetrixAioSerial(
+                    port.device,
+                    115200,
+                    telemetrix_aio_instance=self,
+                    close_loop_on_error=self.close_loop_on_shutdown,
+                )
 
             except SerialException as e:
                 print(e)
@@ -320,12 +366,11 @@ class TmxPicoAio:
                 serial_ports.append(self.serial_port)
 
                 # display to the user
-                print('\t' + port.device)
+                print("\t" + port.device)
 
                 # clear out the serial buffers
                 await self.serial_port.reset_input_buffer()
                 await self.serial_port.reset_output_buffer()
-
 
     async def _manual_open(self):
         """
@@ -334,15 +379,18 @@ class TmxPicoAio:
         """
         # if port is not found, a serial exception will be thrown
         try:
-            print(f'Opening {self.com_port}...')
-            self.serial_port = TelemetrixAioSerial(self.com_port, 115200,
-                                                   telemetrix_aio_instance=self,
-                                                   close_loop_on_error=self.close_loop_on_shutdown)
+            print(f"Opening {self.com_port}...")
+            self.serial_port = TelemetrixAioSerial(
+                self.com_port,
+                115200,
+                telemetrix_aio_instance=self,
+                close_loop_on_error=self.close_loop_on_shutdown,
+            )
             await self.serial_port.start_serial()
         except KeyboardInterrupt:
             if self.shutdown_on_exception:
                 await self.shutdown()
-            raise RuntimeError('User Hit Control-C')
+            raise RuntimeError("User Hit Control-C")
 
     async def _get_firmware_version(self):
         """
@@ -353,7 +401,7 @@ class TmxPicoAio:
         command = [PrivateConstants.GET_FIRMWARE_VERSION]
         await self._send_command(command)
         # provide time for the reply
-        await asyncio.sleep(.1)
+        await asyncio.sleep(0.1)
 
         return self.firmware_version
 
@@ -365,17 +413,17 @@ class TmxPicoAio:
         command = [PrivateConstants.RETRIEVE_PICO_UNIQUE_ID]
         await self._send_command(command)
         # provide time for the reply
-        await asyncio.sleep(.1)
+        await asyncio.sleep(0.1)
 
-        print(f'Pico Unique ID: {self.reported_pico_id}')
+        print(f"Pico Unique ID: {self.reported_pico_id}")
 
         if self.pico_instance_id:
             if self.reported_pico_id != self.pico_instance_id:
                 if self.shutdown_on_exception:
                     await self.shutdown()
-                raise RuntimeError(f'Incorrect pico ID: {self.reported_pico_id}')
+                raise RuntimeError(f"Incorrect pico ID: {self.reported_pico_id}")
             else:
-                print('Valid pico ID Found.')
+                print("Valid pico ID Found.")
 
     async def digital_write(self, pin, value):
         """
@@ -387,9 +435,11 @@ class TmxPicoAio:
 
         """
         if self.pico_pins[pin] != PrivateConstants.AT_OUTPUT:
-            raise RuntimeError('digital_write: You must set the pin mode before '
-                               'performing '
-                               'a digital write.')
+            raise RuntimeError(
+                "digital_write: You must set the pin mode before "
+                "performing "
+                "a digital write."
+            )
         command = [PrivateConstants.DIGITAL_WRITE, pin, value]
         await self._send_command(command)
 
@@ -397,8 +447,11 @@ class TmxPicoAio:
         """
         Disable reporting for all digital and analog input pins
         """
-        command = [PrivateConstants.MODIFY_REPORTING,
-                   PrivateConstants.REPORTING_DISABLE_ALL, 0]
+        command = [
+            PrivateConstants.MODIFY_REPORTING,
+            PrivateConstants.REPORTING_DISABLE_ALL,
+            0,
+        ]
         await self._send_command(command)
 
     async def disable_analog_reporting(self, pin):
@@ -408,8 +461,11 @@ class TmxPicoAio:
         :param pin: Analog pin number. For example for ADC, the number is 0.
 
         """
-        command = [PrivateConstants.MODIFY_REPORTING,
-                   PrivateConstants.REPORTING_ANALOG_DISABLE, pin]
+        command = [
+            PrivateConstants.MODIFY_REPORTING,
+            PrivateConstants.REPORTING_ANALOG_DISABLE,
+            pin,
+        ]
         await self._send_command(command)
 
     async def disable_digital_reporting(self, pin):
@@ -419,8 +475,11 @@ class TmxPicoAio:
         :param pin: GPIO Pin number.
 
         """
-        command = [PrivateConstants.MODIFY_REPORTING,
-                   PrivateConstants.REPORTING_DIGITAL_DISABLE, pin]
+        command = [
+            PrivateConstants.MODIFY_REPORTING,
+            PrivateConstants.REPORTING_DIGITAL_DISABLE,
+            pin,
+        ]
         await self._send_command(command)
 
     async def enable_analog_reporting(self, pin):
@@ -431,8 +490,11 @@ class TmxPicoAio:
 
 
         """
-        command = [PrivateConstants.MODIFY_REPORTING,
-                   PrivateConstants.REPORTING_ANALOG_ENABLE, pin]
+        command = [
+            PrivateConstants.MODIFY_REPORTING,
+            PrivateConstants.REPORTING_ANALOG_ENABLE,
+            pin,
+        ]
         await self._send_command(command)
 
     async def enable_digital_reporting(self, pin):
@@ -442,8 +504,11 @@ class TmxPicoAio:
         :param pin: GPIO Pin number.
         """
 
-        command = [PrivateConstants.MODIFY_REPORTING,
-                   PrivateConstants.REPORTING_DIGITAL_ENABLE, pin]
+        command = [
+            PrivateConstants.MODIFY_REPORTING,
+            PrivateConstants.REPORTING_DIGITAL_ENABLE,
+            pin,
+        ]
         await self._send_command(command)
 
     async def get_pico_pins(self):
@@ -497,67 +562,77 @@ class TmxPicoAio:
 
     async def pwm_write(self, pin, duty_cycle=0, raw=False):
         """
-        Set the specified pin to the specified value.
+         Set the specified pin to the specified value.
 
-        :param pin: pico GPIO pin number
+         :param pin: pico GPIO pin number
 
-        :param duty_cycle: if the raw parameter is False, then this is expressed
-                           as a percentage between 0 and 100
+         :param duty_cycle: if the raw parameter is False, then this is expressed
+                            as a percentage between 0 and 100
 
-                           if the raw parameter is True, then the valid range
-                           of values is from 0 - 19999
+                            if the raw parameter is True, then the valid range
+                            of values is from 0 - 19999
 
-       :param raw: Sets how the duty-cycle parameter is perceived.
+        :param raw: Sets how the duty-cycle parameter is perceived.
 
         """
-        if self.pico_pins[pin] != PrivateConstants.AT_PWM_OUTPUT \
-                and self.pico_pins[pin] != PrivateConstants.AT_SERVO:
-            raise RuntimeError('pwm_write: You must set the pin mode before performing '
-                               'a PWM write.')
+        if (
+            self.pico_pins[pin] != PrivateConstants.AT_PWM_OUTPUT
+            and self.pico_pins[pin] != PrivateConstants.AT_SERVO
+        ):
+            raise RuntimeError(
+                "pwm_write: You must set the pin mode before performing " "a PWM write."
+            )
         if raw:
             if not (0 <= duty_cycle < PrivateConstants.MAX_RAW_DUTY_CYCLE):
-                raise RuntimeError('Raw PWM duty cycle out of range')
+                raise RuntimeError("Raw PWM duty cycle out of range")
         else:
             if not (0 <= duty_cycle <= 100):
-                raise RuntimeError('Raw PWM duty cycle percentage of range')
+                raise RuntimeError("Raw PWM duty cycle percentage of range")
             # calculate percentage of duty cycle
             else:
-                duty_cycle = ((PrivateConstants.MAX_RAW_DUTY_CYCLE * duty_cycle) // 100)
+                duty_cycle = (PrivateConstants.MAX_RAW_DUTY_CYCLE * duty_cycle) // 100
                 # print(duty_cycle)
 
         value_msb = duty_cycle >> 8
-        value_lsb = duty_cycle & 0x00ff
+        value_lsb = duty_cycle & 0x00FF
 
         command = [PrivateConstants.PWM_WRITE, pin, value_msb, value_lsb]
         await self._send_command(command)
 
-    async def i2c_read(self, address, register, number_of_bytes,
-                       callback=None, i2c_port=0, no_stop=False):
+    async def i2c_read(
+        self,
+        address,
+        register,
+        number_of_bytes,
+        callback=None,
+        i2c_port=0,
+        no_stop=False,
+    ):
         """
-        Read the specified number of bytes from the specified register for
-        the i2c device.
+         Read the specified number of bytes from the specified register for
+         the i2c device.
 
 
-        :param address: i2c device address
+         :param address: i2c device address
 
-        :param register: i2c register (or None if no register selection is needed)
+         :param register: i2c register (or None if no register selection is needed)
 
-        :param number_of_bytes: number of bytes to be read
-
-
-       :param i2c_port: 0 = port 0, 1 = port 1
-
-       :param no_stop: If true, master retains control of the bus at the end of the
-                       transfer (no Stop is issued), and the next transfer will
-                       begin with a Restart rather than a Start.
+         :param number_of_bytes: number of bytes to be read
 
 
-        callback returns a data list:
-        [I2C_READ_REPORT, i2c_port, i2c_device_address, count of data bytes,
-        data bytes,
-        time-stamp]
+        :param i2c_port: 0 = port 0, 1 = port 1
 
-        I2C_READ_REPORT = 10
+        :param no_stop: If true, master retains control of the bus at the end of the
+                        transfer (no Stop is issued), and the next transfer will
+                        begin with a Restart rather than a Start.
+
+
+         callback returns a data list:
+         [I2C_READ_REPORT, i2c_port, i2c_device_address, count of data bytes,
+         data bytes,
+         time-stamp]
+
+         I2C_READ_REPORT = 10
 
         """
 
@@ -567,7 +642,8 @@ class TmxPicoAio:
                 if self.shutdown_on_exception:
                     await self.shutdown()
                 raise RuntimeError(
-                    'I2C Read: set_pin_mode_i2c never called for i2c port 0.')
+                    "I2C Read: set_pin_mode_i2c never called for i2c port 0."
+                )
 
         else:
             if not i2c_port == 1:
@@ -575,17 +651,24 @@ class TmxPicoAio:
                     if self.shutdown_on_exception:
                         await self.shutdown()
                     raise RuntimeError(
-                        'I2C Read: set_pin_mode_i2c never called for i2c port 1.')
+                        "I2C Read: set_pin_mode_i2c never called for i2c port 1."
+                    )
         message_id = self.i2c_read_message_counter
         self.i2c_read_message_counter += 1
-        if(self.i2c_read_message_counter >254):
+        if self.i2c_read_message_counter > 254:
             self.i2c_read_message_counter = 0
         event = asyncio.Event()
         self.i2c_read_message_waiters[message_id] = event
 
-
-        command = [PrivateConstants.I2C_READ, i2c_port, address, message_id, register,
-                   number_of_bytes, no_stop]
+        command = [
+            PrivateConstants.I2C_READ,
+            i2c_port,
+            address,
+            message_id,
+            register,
+            number_of_bytes,
+            no_stop,
+        ]
 
         # no register specified
         if not register:
@@ -593,7 +676,9 @@ class TmxPicoAio:
 
         await self._send_command(command)
         try:
-            await asyncio.wait_for(event.wait(), 1) # wait 1 second for the reply message
+            await asyncio.wait_for(
+                event.wait(), 1
+            )  # wait 1 second for the reply message
         except Exception:
             print("no answer read")
             return False
@@ -623,28 +708,39 @@ class TmxPicoAio:
                 if self.shutdown_on_exception:
                     await self.shutdown()
                 raise RuntimeError(
-                    'I2C Write: set_pin_mode i2c never called for i2c port 0.')
+                    "I2C Write: set_pin_mode i2c never called for i2c port 0."
+                )
 
         elif i2c_port:
             if not self.i2c_1_active:
                 if self.shutdown_on_exception:
                     await self.shutdown()
                 raise RuntimeError(
-                    'I2C Write: set_pin_mode i2c never called for i2c port 2.')
+                    "I2C Write: set_pin_mode i2c never called for i2c port 2."
+                )
         message_id = self.i2c_write_message_counter
         self.i2c_write_message_counter += 1
-        if(self.i2c_write_message_counter > 254):
+        if self.i2c_write_message_counter > 254:
             self.i2c_write_message_counter = 0
         event = asyncio.Event()
         self.i2c_write_message_waiters[message_id] = event
-        
-        command = [PrivateConstants.I2C_WRITE, i2c_port, address,message_id, len(args), no_stop]
+
+        command = [
+            PrivateConstants.I2C_WRITE,
+            i2c_port,
+            address,
+            message_id,
+            len(args),
+            no_stop,
+        ]
 
         for item in args:
             command.append(item)
         await self._send_command(command)
         try:
-            await asyncio.wait_for(event.wait(), 5) # wait 1 second for the acknowledgement message
+            await asyncio.wait_for(
+                event.wait(), 5
+            )  # wait 1 second for the acknowledgement message
         except Exception as e:
             print(e)
             print(event.is_set(), self.i2c_write_message_data[message_id])
@@ -652,7 +748,7 @@ class TmxPicoAio:
             return False
 
         data = self.i2c_write_message_data[message_id]
-        if(data[2] > 128): # signed -> unsigned number
+        if data[2] > 128:  # signed -> unsigned number
             print("Write failed")
             return False
         return True
@@ -674,13 +770,13 @@ class TmxPicoAio:
 
         """
         if not self.neopixels_initiated:
-            raise RuntimeError('You must call set_pin_mode_neopixel first')
+            raise RuntimeError("You must call set_pin_mode_neopixel first")
 
         if pixel_number > self.number_of_pixels:
-            raise RuntimeError('Pixel number is out of legal range')
+            raise RuntimeError("Pixel number is out of legal range")
 
         if r and g and b not in range(256):
-            raise RuntimeError('Pixel value must be in the range of 0-255')
+            raise RuntimeError("Pixel value must be in the range of 0-255")
 
         command = [PrivateConstants.SET_NEO_PIXEL, pixel_number, r, g, b, auto_show]
         await self._send_command(command)
@@ -696,7 +792,7 @@ class TmxPicoAio:
 
         """
         if not self.neopixels_initiated:
-            raise RuntimeError('You must call set_pin_mode_neopixel first')
+            raise RuntimeError("You must call set_pin_mode_neopixel first")
         command = [PrivateConstants.CLEAR_ALL_NEO_PIXELS, auto_show]
         await self._send_command(command)
         if auto_show:
@@ -715,9 +811,9 @@ class TmxPicoAio:
         :param auto_show: call show automatically
         """
         if not self.neopixels_initiated:
-            raise RuntimeError('You must call set_pin_mode_neopixel first')
+            raise RuntimeError("You must call set_pin_mode_neopixel first")
         if r and g and b not in range(256):
-            raise RuntimeError('Pixel value must be in the range of 0-255')
+            raise RuntimeError("Pixel value must be in the range of 0-255")
         command = [PrivateConstants.FILL_ALL_NEO_PIXELS, r, g, b, auto_show]
         await self._send_command(command)
 
@@ -730,11 +826,13 @@ class TmxPicoAio:
 
         """
         if not self.neopixels_initiated:
-            raise RuntimeError('You must call set_pin_mode_neopixel first')
+            raise RuntimeError("You must call set_pin_mode_neopixel first")
         command = [PrivateConstants.SHOW_NEO_PIXELS]
         await self._send_command(command)
 
-    async def set_pin_mode_analog_input(self, adc_number, differential=0, callback=None):
+    async def set_pin_mode_analog_input(
+        self, adc_number, differential=0, callback=None
+    ):
         """
         Set a pin as an analog input.
 
@@ -765,9 +863,10 @@ class TmxPicoAio:
         """
         # make sure adc number is in range
         if not 0 <= adc_number < 5:
-            raise RuntimeError('Invalid ADC Number')
-        await self._set_pin_mode(adc_number, PrivateConstants.AT_ANALOG, differential,
-                                 callback=callback)
+            raise RuntimeError("Invalid ADC Number")
+        await self._set_pin_mode(
+            adc_number, PrivateConstants.AT_ANALOG, differential, callback=callback
+        )
 
     async def set_pin_mode_digital_input(self, pin_number, callback=None):
         """
@@ -785,7 +884,9 @@ class TmxPicoAio:
         DIGITAL_REPORT = 2
 
         """
-        await self._set_pin_mode(pin_number, PrivateConstants.AT_INPUT, callback=callback)
+        await self._set_pin_mode(
+            pin_number, PrivateConstants.AT_INPUT, callback=callback
+        )
 
     async def set_pin_mode_digital_input_pullup(self, pin_number, callback=None):
         """
@@ -803,8 +904,9 @@ class TmxPicoAio:
         The DIGITAL_REPORT = 2
 
         """
-        await self._set_pin_mode(pin_number, PrivateConstants.AT_INPUT_PULLUP,
-                                 callback=callback)
+        await self._set_pin_mode(
+            pin_number, PrivateConstants.AT_INPUT_PULLUP, callback=callback
+        )
 
     async def set_pin_mode_digital_input_pull_down(self, pin_number, callback=None):
         """
@@ -822,8 +924,9 @@ class TmxPicoAio:
         DIGITAL_REPORT= 2
 
         """
-        await self._set_pin_mode(pin_number, PrivateConstants.AT_INPUT_PULL_DOWN,
-                                 callback=callback)
+        await self._set_pin_mode(
+            pin_number, PrivateConstants.AT_INPUT_PULL_DOWN, callback=callback
+        )
 
     async def set_pin_mode_digital_output(self, pin_number):
         """
@@ -834,8 +937,9 @@ class TmxPicoAio:
 
         await self._set_pin_mode(pin_number, PrivateConstants.AT_OUTPUT)
 
-    async def set_pin_mode_neopixel(self, pin_number=28, num_pixels=8,
-                                    fill_r=0, fill_g=0, fill_b=0):
+    async def set_pin_mode_neopixel(
+        self, pin_number=28, num_pixels=8, fill_r=0, fill_g=0, fill_b=0
+    ):
         """
         Initialize the pico for NeoPixel control. Fill with rgb values specified.
 
@@ -854,12 +958,18 @@ class TmxPicoAio:
 
         """
         if fill_r or fill_g or fill_g not in range(256):
-            raise RuntimeError('Pixel value must be in the range of 0-255')
+            raise RuntimeError("Pixel value must be in the range of 0-255")
 
         self.number_of_pixels = num_pixels
 
-        command = [PrivateConstants.INITIALIZE_NEO_PIXELS, pin_number,
-                   self.number_of_pixels, fill_r, fill_g, fill_b]
+        command = [
+            PrivateConstants.INITIALIZE_NEO_PIXELS,
+            pin_number,
+            self.number_of_pixels,
+            fill_r,
+            fill_g,
+            fill_b,
+        ]
 
         await self._send_command(command)
 
@@ -884,13 +994,14 @@ class TmxPicoAio:
             self.pico_pins[pin_number] = PrivateConstants.AT_PWM_OUTPUT
             if self.pwm_active_count >= 15:
                 raise RuntimeError(
-                    'pwm or servo set mode: number of active PWM pins is at maximum')
+                    "pwm or servo set mode: number of active PWM pins is at maximum"
+                )
 
             self.pwm_active_count += 1
 
             await self._set_pin_mode(pin_number, PrivateConstants.AT_PWM_OUTPUT)
         else:
-            raise RuntimeError('Gpio Pin Number is invalid')
+            raise RuntimeError("Gpio Pin Number is invalid")
 
     async def set_pin_mode_i2c(self, i2c_port=0, sda_gpio=4, scl_gpio=5):
         """
@@ -913,18 +1024,18 @@ class TmxPicoAio:
         """
         # determine if the i2c port is specified correctly
         if i2c_port not in [0, 1]:
-            raise RuntimeError('i2c port must be either a 0 or 1')
+            raise RuntimeError("i2c port must be either a 0 or 1")
         # determine if the sda and scl gpio's are valid
         if sda_gpio not in self.i2c_sda_pins:
-            raise RuntimeError(f'GPIO {sda_gpio} is an invalid i2c SDA GPIO')
+            raise RuntimeError(f"GPIO {sda_gpio} is an invalid i2c SDA GPIO")
         if scl_gpio not in self.i2c_scl_pins:
-            raise RuntimeError(f'GPIO {scl_gpio} is an invalid i2c SCL GPIO')
+            raise RuntimeError(f"GPIO {scl_gpio} is an invalid i2c SCL GPIO")
 
         # are both GPIOs available?
         if not self.i2c_sda_pins[sda_gpio] == 255:
-            raise RuntimeError(f'GPIO SDA pin {sda_gpio} is already in use.')
+            raise RuntimeError(f"GPIO SDA pin {sda_gpio} is already in use.")
         if not self.i2c_scl_pins[scl_gpio] == 255:
-            raise RuntimeError(f'GPIO SCL pin {scl_gpio} is already in use.')
+            raise RuntimeError(f"GPIO SCL pin {scl_gpio} is already in use.")
         # both pins available - mark the sda and scl dictionaries appropriately
         self.i2c_sda_pins[sda_gpio] = self.i2c_scl_pins[scl_gpio] = i2c_port
 
@@ -947,22 +1058,22 @@ class TmxPicoAio:
     async def set_pin_mode_dht(self, pin, callback=None):
         """
 
-      :param pin: connection pin
+        :param pin: connection pin
 
-      :param callback: callback function
+        :param callback: callback function
 
-      callback returns a data list:
+        callback returns a data list:
 
-        DHT REPORT, DHT_DATA=1, PIN, Humidity,  Temperature (c),Time]
+          DHT REPORT, DHT_DATA=1, PIN, Humidity,  Temperature (c),Time]
 
-        DHT_REPORT =  12
+          DHT_REPORT =  12
 
         """
 
         if not callback:
             if self.shutdown_on_exception:
                 await self.shutdown()
-            raise RuntimeError('set_pin_mode_dht: A Callback must be specified')
+            raise RuntimeError("set_pin_mode_dht: A Callback must be specified")
 
         if self.dht_count < PrivateConstants.MAX_DHTS:
             self.dht_callbacks[pin] = callback
@@ -974,7 +1085,8 @@ class TmxPicoAio:
             if self.shutdown_on_exception:
                 await self.shutdown()
             raise RuntimeError(
-                f'Maximum Number Of DHTs Exceeded - set_pin_mode_dht fails for pin {pin}')
+                f"Maximum Number Of DHTs Exceeded - set_pin_mode_dht fails for pin {pin}"
+            )
 
     # noinspection PyRedundantParentheses
     async def set_pin_mode_servo(self, pin_number, min_pulse=1000, max_pulse=2000):
@@ -993,13 +1105,21 @@ class TmxPicoAio:
 
         """
 
-        await self._set_pin_mode(pin_number, PrivateConstants.AT_SERVO, min_pulse,
-                                 max_pulse)
+        await self._set_pin_mode(
+            pin_number, PrivateConstants.AT_SERVO, min_pulse, max_pulse
+        )
         self.pico_pins[pin_number] = PrivateConstants.AT_SERVO
 
-    async def set_pin_mode_spi(self, spi_port=0, miso=16, mosi=19, clock_pin=18,
-                               clk_frequency=500000, chip_select_list=None,
-                               qualify_pins=True):
+    async def set_pin_mode_spi(
+        self,
+        spi_port=0,
+        miso=16,
+        mosi=19,
+        clock_pin=18,
+        clk_frequency=500000,
+        chip_select_list=None,
+        qualify_pins=True,
+    ):
         """
         Specify the SPI port, SPI pins, clock frequency and an optional
         list of chip select pins. The SPI port is configured as a "master".
@@ -1043,7 +1163,7 @@ class TmxPicoAio:
         if spi_port not in [0, 1]:
             if self.shutdown_on_exception:
                 await self.shutdown()
-            raise RuntimeError('spi port must be either a 0 or 1')
+            raise RuntimeError("spi port must be either a 0 or 1")
 
         # determine if the spi gpio's are valid if qualify_pin is True.
         if qualify_pins:
@@ -1051,57 +1171,57 @@ class TmxPicoAio:
                 if mosi != 19:
                     if self.shutdown_on_exception:
                         await self.shutdown()
-                    raise RuntimeError('For spi0 mosi must be 19.')
+                    raise RuntimeError("For spi0 mosi must be 19.")
                 if miso != 16:
                     if self.shutdown_on_exception:
                         await self.shutdown()
-                    raise RuntimeError('For spi0 miso must be 16.')
+                    raise RuntimeError("For spi0 miso must be 16.")
                 if clock_pin != 18:
                     if self.shutdown_on_exception:
                         await self.shutdown()
-                    raise RuntimeError('For spi0 clock must be 18.')
+                    raise RuntimeError("For spi0 clock must be 18.")
             else:
                 if mosi != 15:
                     if self.shutdown_on_exception:
                         await self.shutdown()
-                    raise RuntimeError('For spi1 mosi must be 15.')
+                    raise RuntimeError("For spi1 mosi must be 15.")
                 if miso != 12:
                     if self.shutdown_on_exception:
                         await self.shutdown()
-                    raise RuntimeError('For spi1 miso must be 12.')
+                    raise RuntimeError("For spi1 miso must be 12.")
                 if clock_pin != 14:
                     if self.shutdown_on_exception:
                         await self.shutdown()
-                    raise RuntimeError('For spi0 clock must be 14.')
+                    raise RuntimeError("For spi0 clock must be 14.")
 
         # check if mosi, miso or clock pins have already been assigned
         if self.pico_pins[mosi] != PrivateConstants.AT_MODE_NOT_SET:
             if self.shutdown_on_exception:
                 await self.shutdown()
-            raise RuntimeError('MOSI pin currently in use')
+            raise RuntimeError("MOSI pin currently in use")
         if self.pico_pins[miso] != PrivateConstants.AT_MODE_NOT_SET:
             if self.shutdown_on_exception:
                 await self.shutdown()
-            raise RuntimeError('MISO pin currently in use')
+            raise RuntimeError("MISO pin currently in use")
         if self.pico_pins[clock_pin] != PrivateConstants.AT_MODE_NOT_SET:
             if self.shutdown_on_exception:
                 await self.shutdown()
-            raise RuntimeError('Clock Pin pin currently in use')
+            raise RuntimeError("Clock Pin pin currently in use")
 
         if type(chip_select_list) != list:
             if self.shutdown_on_exception:
                 await self.shutdown()
-            raise RuntimeError('chip_select_list must be in the form of a list')
+            raise RuntimeError("chip_select_list must be in the form of a list")
         if not chip_select_list:
             if self.shutdown_on_exception:
-                await  self.shutdown()
-            raise RuntimeError('Chip select pins were not specified')
+                await self.shutdown()
+            raise RuntimeError("Chip select pins were not specified")
         # validate chip select pins
         for pin in chip_select_list:
             if self.pico_pins[pin] != PrivateConstants.AT_MODE_NOT_SET:
                 if self.shutdown_on_exception:
                     await self.shutdown()
-                raise RuntimeError(f'SPI Chip select pin {pin} is already in use!')
+                raise RuntimeError(f"SPI Chip select pin {pin} is already in use!")
 
         # test for spi port 0
         if not spi_port:
@@ -1112,7 +1232,7 @@ class TmxPicoAio:
 
         # freq_msb = clk_frequency >> 8
         # freq_lsb = clk_frequency & 0x00ff
-        freq_bytes = clk_frequency.to_bytes(4, byteorder='big')
+        freq_bytes = clk_frequency.to_bytes(4, byteorder="big")
 
         self.pico_pins[mosi] = PrivateConstants.AT_SPI
         self.pico_pins[miso] = PrivateConstants.AT_SPI
@@ -1142,8 +1262,10 @@ class TmxPicoAio:
         """
 
         if self.pico_pins[pin_number] != PrivateConstants.AT_SERVO:
-            raise RuntimeError('You must call set_pin_mode_servo before trying to '
-                               'write a value to a servo or servo was detached.')
+            raise RuntimeError(
+                "You must call set_pin_mode_servo before trying to "
+                "write a value to a servo or servo was detached."
+            )
 
         # get the min and max for the servo and calculate the duty-cycle
         min_duty = self.servo_ranges[pin_number][PrivateConstants.MIN_SERVO_DUTY_CYCLE]
@@ -1156,49 +1278,52 @@ class TmxPicoAio:
         # use a raw pwm write from the calculated values
         await self.pwm_write(pin_number, duty_cycle, True)
 
-    async def set_pin_mode_encoder(self, pin_A, pin_B=0, callback=None,quadrature = True):
+    async def set_pin_mode_encoder(
+        self, pin_A, pin_B=0, callback=None, quadrature=True
+    ):
         """
-        :param pin_A:  Sensor trigger gpio pin
+         :param pin_A:  Sensor trigger gpio pin
 
-        :param pin_B: Sensor echo gpio pin
+         :param pin_B: Sensor echo gpio pin
 
-        :param callback: callback, only called on encoder step
+         :param callback: callback, only called on encoder step
 
-        :param quadrature: quadrature encoder or single encoder(False)
+         :param quadrature: quadrature encoder or single encoder(False)
 
-       callback returns a data list:
+        callback returns a data list:
 
-       [ ENCODER_REPORT, pin_A, steps, time_stamp]
+        [ ENCODER_REPORT, pin_A, steps, time_stamp]
 
-       ENCODER_REPORT =  14
+        ENCODER_REPORT =  14
 
         """
         if not callback:
             if self.shutdown_on_exception:
-                self.shutdown()
-            raise RuntimeError('set_pin_mode_encoder: A callback must be specified')
-        if quadrature and pin_B==-1:
-            raise RuntimeError('set_pin_mode_encoder: quadrature encoder requires pin_B')
+                await self.shutdown()
+            raise RuntimeError("set_pin_mode_encoder: A callback must be specified")
+        if quadrature and pin_B == -1:
+            raise RuntimeError(
+                "set_pin_mode_encoder: quadrature encoder requires pin_B"
+            )
         if self.encoder_count < PrivateConstants.MAX_ENCODERS:
             self.encoder_callbacks[pin_A] = callback
             self.encoder_steps[pin_A] = 0
-            self.encoder_count+= 1
+            self.encoder_count += 1
             self.pico_pins[pin_A] = PrivateConstants.AT_ENCODER
 
-            encoder_type = 1 #single
-            if(quadrature):
+            encoder_type = 1  # single
+            if quadrature:
                 self.pico_pins[pin_B] = PrivateConstants.AT_ENCODER
                 encoder_type = 2
             else:
                 pin_B = 0
-            
-            
+
             command = [PrivateConstants.ENCODER_NEW, encoder_type, pin_A, pin_B]
             await self._send_command(command)
         else:
             if self.shutdown_on_exception:
-                self.shutdown()
-            raise RuntimeError('Maximum number of supported sonar devices exceeded.')
+                await self.shutdown()
+            raise RuntimeError("Maximum number of supported sonar devices exceeded.")
 
     async def spi_cs_control(self, chip_select_pin, select):
         """
@@ -1211,13 +1336,15 @@ class TmxPicoAio:
         if self.pico_pins[chip_select_pin] != PrivateConstants.AT_SPI:
             if self.shutdown_on_exception:
                 await self.shutdown()
-            raise RuntimeError(f'spi_read_blocking: Invalid chip select pin'
-                               f' {chip_select_pin}.')
+            raise RuntimeError(
+                f"spi_read_blocking: Invalid chip select pin" f" {chip_select_pin}."
+            )
         command = [PrivateConstants.SPI_CS_CONTROL, chip_select_pin, select]
         await self._send_command(command)
 
-    async def spi_read_blocking(self, number_of_bytes, spi_port=0, call_back=None,
-                                repeated_tx_data=0):
+    async def spi_read_blocking(
+        self, number_of_bytes, spi_port=0, call_back=None, repeated_tx_data=0
+    ):
         """
         Read the specified number of bytes from the specified SPI port and
         call the callback function with the reported data.
@@ -1242,31 +1369,39 @@ class TmxPicoAio:
         if not call_back:
             if self.shutdown_on_exception:
                 await self.shutdown()
-            raise RuntimeError('spi_read_blocking: A Callback must be specified')
+            raise RuntimeError("spi_read_blocking: A Callback must be specified")
 
         if not spi_port:
             if not self.spi_0_active:
                 if self.shutdown_on_exception:
                     await self.shutdown()
                 raise RuntimeError(
-                    'spi_read_blocking: set_pin_mode_spi never called for spi port 0.')
+                    "spi_read_blocking: set_pin_mode_spi never called for spi port 0."
+                )
 
         elif spi_port:
             if not self.spi_1_active:
                 if self.shutdown_on_exception:
                     await self.shutdown()
                 raise RuntimeError(
-                    'spi_read_blocking: set_pin_mode_spi never called for spi port 1.')
+                    "spi_read_blocking: set_pin_mode_spi never called for spi port 1."
+                )
         if spi_port == 0:
             self.spi_callback = call_back
         else:
             self.spi_callback2 = call_back
 
-        command = [PrivateConstants.SPI_READ_BLOCKING, spi_port, number_of_bytes,
-                   repeated_tx_data]
+        command = [
+            PrivateConstants.SPI_READ_BLOCKING,
+            spi_port,
+            number_of_bytes,
+            repeated_tx_data,
+        ]
         await self._send_command(command)
 
-    async def spi_set_format(self, spi_port=0, data_bits=8, spi_polarity=0, spi_phase=0):
+    async def spi_set_format(
+        self, spi_port=0, data_bits=8, spi_polarity=0, spi_phase=0
+    ):
         """
         Configure how the SPI serializes and de-serializes data on the wire.
 
@@ -1283,16 +1418,23 @@ class TmxPicoAio:
                 if self.shutdown_on_exception:
                     await self.shutdown()
                 raise RuntimeError(
-                    'spi_set_format: set_pin_mode_spi never called for spi port 0.')
+                    "spi_set_format: set_pin_mode_spi never called for spi port 0."
+                )
 
         elif spi_port:
             if not self.spi_1_active:
                 if self.shutdown_on_exception:
                     await self.shutdown()
                 raise RuntimeError(
-                    'spi_set_format: set_pin_mode_spi never called for spi port 1.')
-        command = [PrivateConstants.SPI_SET_FORMAT, spi_port, data_bits,
-                   spi_polarity, spi_phase]
+                    "spi_set_format: set_pin_mode_spi never called for spi port 1."
+                )
+        command = [
+            PrivateConstants.SPI_SET_FORMAT,
+            spi_port,
+            data_bits,
+            spi_polarity,
+            spi_phase,
+        ]
         await self._send_command(command)
 
     async def spi_write_blocking(self, bytes_to_write, spi_port=0):
@@ -1310,16 +1452,17 @@ class TmxPicoAio:
                 if self.shutdown_on_exception:
                     await self.shutdown()
                 raise RuntimeError(
-                    'spi_write_blocking: set_pin_mode_spi never called for spi port 0.')
+                    "spi_write_blocking: set_pin_mode_spi never called for spi port 0."
+                )
 
         elif spi_port:
             if not self.spi_1_active:
                 if self.shutdown_on_exception:
                     await self.shutdown()
                 raise RuntimeError(
-                    'spi_write_blocking: set_pin_mode_spi never called for spi port 1.')
-        command = [PrivateConstants.SPI_WRITE_BLOCKING, spi_port,
-                   len(bytes_to_write)]
+                    "spi_write_blocking: set_pin_mode_spi never called for spi port 1."
+                )
+        command = [PrivateConstants.SPI_WRITE_BLOCKING, spi_port, len(bytes_to_write)]
 
         for data in bytes_to_write:
             command.append(data)
@@ -1328,40 +1471,41 @@ class TmxPicoAio:
 
     async def set_pin_mode_sonar(self, trigger_pin, echo_pin, callback=None):
         """
-        :param trigger_pin:  Sensor trigger gpio pin
+         :param trigger_pin:  Sensor trigger gpio pin
 
-        :param echo_pin: Sensor echo gpio pin
+         :param echo_pin: Sensor echo gpio pin
 
-        :param callback: callback
+         :param callback: callback
 
-       callback returns a data list:
+        callback returns a data list:
 
-       [ SONAR_DISTANCE, trigger_pin, distance_value, time_stamp]
+        [ SONAR_DISTANCE, trigger_pin, distance_value, time_stamp]
 
-       SONAR_DISTANCE =  11
+        SONAR_DISTANCE =  11
 
         """
         if not callback:
             if self.shutdown_on_exception:
                 await self.shutdown()
-            raise RuntimeError('set_pin_mode_sonar: A Callback must be specified')
+            raise RuntimeError("set_pin_mode_sonar: A Callback must be specified")
 
         if self.sonar_count < PrivateConstants.MAX_SONARS:
             self.sonar_callbacks[trigger_pin] = callback
             self.sonar_count += 1
-            self.pico_pins[trigger_pin] = self.pico_pins[echo_pin] = \
+            self.pico_pins[trigger_pin] = self.pico_pins[echo_pin] = (
                 PrivateConstants.AT_SONAR
+            )
 
             command = [PrivateConstants.SONAR_NEW, trigger_pin, echo_pin]
             await self._send_command(command)
         else:
             if self.shutdown_on_exception:
                 await self.shutdown()
-            raise RuntimeError('Maximum number of supported sonar devices exceeded.')
+            raise RuntimeError("Maximum number of supported sonar devices exceeded.")
 
-    async def _set_pin_mode(self, pin_number, pin_state, differential=0, value_range=0,
-                            callback=None):
-
+    async def _set_pin_mode(
+        self, pin_number, pin_state, differential=0, value_range=0, callback=None
+    ):
         """
         A private method to set the various pin modes.
 
@@ -1389,7 +1533,7 @@ class TmxPicoAio:
             if pin_number in self.pico_pins:
                 self.pico_pins[pin_number] = pin_state
             else:
-                raise RuntimeError('Gpio Pin Number is invalid')
+                raise RuntimeError("Gpio Pin Number is invalid")
 
         if callback:
             if pin_state == PrivateConstants.AT_INPUT:
@@ -1402,44 +1546,73 @@ class TmxPicoAio:
                 self.analog_callbacks[pin_number] = callback
 
             else:
-                print('{} {}'.format('set_pin_mode: callback ignored for '
-                                     'pin state:', pin_state))
+                print(
+                    "{} {}".format(
+                        "set_pin_mode: callback ignored for " "pin state:", pin_state
+                    )
+                )
 
         if pin_state == PrivateConstants.AT_INPUT:
-            command = [PrivateConstants.SET_PIN_MODE, pin_number,
-                       PrivateConstants.AT_INPUT, 1]
+            command = [
+                PrivateConstants.SET_PIN_MODE,
+                pin_number,
+                PrivateConstants.AT_INPUT,
+                1,
+            ]
 
         elif pin_state == PrivateConstants.AT_INPUT_PULLUP:
-            command = [PrivateConstants.SET_PIN_MODE, pin_number,
-                       PrivateConstants.AT_INPUT_PULLUP, 1]
+            command = [
+                PrivateConstants.SET_PIN_MODE,
+                pin_number,
+                PrivateConstants.AT_INPUT_PULLUP,
+                1,
+            ]
 
         elif pin_state == PrivateConstants.AT_INPUT_PULL_DOWN:
-            command = [PrivateConstants.SET_PIN_MODE, pin_number,
-                       PrivateConstants.AT_INPUT_PULL_DOWN, 1]
+            command = [
+                PrivateConstants.SET_PIN_MODE,
+                pin_number,
+                PrivateConstants.AT_INPUT_PULL_DOWN,
+                1,
+            ]
 
         elif pin_state == PrivateConstants.AT_OUTPUT:
-            command = [PrivateConstants.SET_PIN_MODE, pin_number,
-                       PrivateConstants.AT_OUTPUT]
+            command = [
+                PrivateConstants.SET_PIN_MODE,
+                pin_number,
+                PrivateConstants.AT_OUTPUT,
+            ]
 
         elif pin_state == PrivateConstants.AT_ANALOG:
-            command = [PrivateConstants.SET_PIN_MODE, pin_number,
-                       PrivateConstants.AT_ANALOG,
-                       differential >> 8, differential & 0xff, 1]
+            command = [
+                PrivateConstants.SET_PIN_MODE,
+                pin_number,
+                PrivateConstants.AT_ANALOG,
+                differential >> 8,
+                differential & 0xFF,
+                1,
+            ]
 
         elif pin_state == PrivateConstants.AT_PWM_OUTPUT:
-            command = [PrivateConstants.SET_PIN_MODE, pin_number,
-                       PrivateConstants.AT_PWM_OUTPUT]
+            command = [
+                PrivateConstants.SET_PIN_MODE,
+                pin_number,
+                PrivateConstants.AT_PWM_OUTPUT,
+            ]
 
         elif pin_state == PrivateConstants.AT_SERVO:
             # we reuse the PWM_OUTPUT command
-            command = [PrivateConstants.SET_PIN_MODE, pin_number,
-                       PrivateConstants.AT_PWM_OUTPUT]
+            command = [
+                PrivateConstants.SET_PIN_MODE,
+                pin_number,
+                PrivateConstants.AT_PWM_OUTPUT,
+            ]
             self.servo_ranges[pin_number] = [differential, value_range]
 
         else:
             if self.shutdown_on_exception:
                 await self.shutdown()
-            raise RuntimeError('Unknown pin state')
+            raise RuntimeError("Unknown pin state")
 
         if pin_state == PrivateConstants.AT_ANALOG:
             if pin_number == 0:
@@ -1461,23 +1634,30 @@ class TmxPicoAio:
         If any exceptions are thrown, they are ignored.
 
         """
+        if self.shutdown_flag:
+            return
         print("shutting down!")
         self.shutdown_flag = True
+
         # stop all reporting - both analog and digital
         try:
+            if self.serial_port:
+                self.serial_port.closed = True
             command = [PrivateConstants.STOP_ALL_REPORTS]
             await self._send_command(command)
 
-            await asyncio.sleep(.5)
+            await asyncio.sleep(0.5)
 
             if self.reset_on_shutdown:
                 command = [PrivateConstants.RESET_BOARD]
                 await self._send_command(command)
-                await asyncio.sleep(.2)
+                await asyncio.sleep(0.2)
 
             # await self.serial_port.reset_input_buffer()
+            await self.the_task
             await self.serial_port.close()
             if self.close_loop_on_shutdown:
+                print("stop loop")
                 self.loop.stop()
         except (RuntimeError, SerialException):
             pass
@@ -1494,14 +1674,51 @@ class TmxPicoAio:
         cb = self.encoder_callbacks[report[0]]
 
         steps = report[1]
-        if(steps > 128): # convert from uint8 to int8 value
+        if steps > 128:  # convert from uint8 to int8 value
             steps -= 256
-        self.encoder_steps[report[0]] +=steps
-        
-        cb_list = [PrivateConstants.ENCODER_REPORT, report[0],
-                    self.encoder_steps[report[0]], time.time()]
+        self.encoder_steps[report[0]] += steps
+
+        cb_list = [
+            PrivateConstants.ENCODER_REPORT,
+            report[0],
+            self.encoder_steps[report[0]],
+            time.time(),
+        ]
 
         await cb(cb_list)
+
+    async def ping(
+        self,
+    ):  # ping the pico at 2Hz, and receive the same value back and a random(at start) value from the pico
+        self.pingNum = 0
+        self.randomPicoNum = -1
+        counter = 0
+        while not self.shutdown_flag:
+            if ((counter + 256) - self.pingNum) % 256 > 10:
+                print("incorrect ping from Pico", self.pingNum, counter)
+                await self.shutdown()
+            counter = (counter + 1) % 256
+            await self._send_command([PrivateConstants.PING, counter])
+            await asyncio.sleep(0.5)
+
+    async def _pong_report(self, report):
+        self.pingNum = report[0]
+        if self.randomPicoNum == -1:
+            self.randomPicoNum = report[1]
+        if self.randomPicoNum != report[1]:  # pico restarted in the meantime
+            print("different pico num", self.randomPicoNum, report)
+            await self.shutdown()
+
+    async def _sensor_report(self, report):
+        """ """
+        if self._sensor_reporter is None:
+            print("No sensor reporter installed")
+            return
+        await self._sensor_reporter(report)
+
+    async def _module_report(self, report):
+        """ """
+        print("modules not supported in this version")
 
     async def _spi_report(self, report):
         """
@@ -1520,24 +1737,24 @@ class TmxPicoAio:
         else:
             await self.spi_callback(cb_list)
 
-    '''
+    """
     report message handlers
-    '''
+    """
 
     async def reset_board(self):
         """
         Send a command to the Pico to perform a hardware reset
         """
-        # TODO: BROKEN: telemetrix will think pins are setup(like i2c pins), while the board doesn't, 
+        # TODO: BROKEN: telemetrix will think pins are setup(like i2c pins), while the board doesn't,
         # needs either resetting telemetrix settings or sending commands to set pins to pico.
 
         # do not shutdown when there is an exception, as it will generate quite a few, because the pico needs to reboot
-        sh = self.shutdown_on_exception 
+        sh = self.shutdown_on_exception
         self.shutdown_on_exception = False
         command = [PrivateConstants.RESET_BOARD]
         await self._send_command(command)
-        await asyncio.sleep(.2)
-        self.shutdown_on_exception = sh # reinstate original settings
+        await asyncio.sleep(0.2)
+        self.shutdown_on_exception = sh  # reinstate original settings
 
     async def _pico_report_dispatcher(self):
         """
@@ -1557,11 +1774,11 @@ class TmxPicoAio:
                 break
             try:
                 packet_length = await self.serial_port.read()
-                if(packet_length == 0): # == error
-                    if( self.shutdown_flag):
+                if packet_length == 0:  # == error
+                    if self.shutdown_flag:
                         break
                     else:
-                        raise RuntimeError('Is your USB cable plugged in?')
+                        raise RuntimeError("Is your USB cable plugged in?")
                         if self.shutdown_on_exception:
                             await self.shutdown()
                             break
@@ -1573,7 +1790,7 @@ class TmxPicoAio:
                 print(e)
                 break
             except AttributeError:
-                raise RuntimeError('Is your USB cable plugged in?')
+                raise RuntimeError("Is your USB cable plugged in?")
                 if self.shutdown_on_exception:
                     await self.shutdown()
 
@@ -1584,12 +1801,14 @@ class TmxPicoAio:
                 continue
             except OSError:
                 break
+            if len(packet) != packet_length:
+                break
             report = packet[0]
             # handle all other messages by looking them up in the
             # command dictionary
             # noinspection PyArgumentList
-            try: # TODO: check if direct calling is faster or adding it to the event loop is faster
-                self.loop.create_task( self.report_dispatch[report](packet[1:]))
+            try:  # TODO: check if direct calling is faster or adding it to the event loop is faster
+                self.loop.create_task(self.report_dispatch[report](packet[1:]))
             except Exception as e:
                 print("dispatch error:", e)
 
@@ -1599,7 +1818,6 @@ class TmxPicoAio:
         """
         command = [PrivateConstants.SET_SCAN_DELAY, delay]
         await self._send_command(command)
-
 
     async def _analog_message(self, data):
         """
@@ -1637,8 +1855,13 @@ class TmxPicoAio:
         """
         cb = self.dht_callbacks[data[0]]
 
-        cb_list = [PrivateConstants.DHT_REPORT, data[0],
-                   (data[1] + (data[2] / 100)), (data[3] + (data[4] / 100)), time.time()]
+        cb_list = [
+            PrivateConstants.DHT_REPORT,
+            data[0],
+            (data[1] + (data[2] / 100)),
+            (data[3] + (data[4] / 100)),
+            time.time(),
+        ]
         await cb(cb_list)
 
     async def _digital_message(self, data):
@@ -1672,7 +1895,6 @@ class TmxPicoAio:
         self.i2c_read_message_data[message_id] = data
         self.i2c_read_message_waiters[message_id].set()
 
-
     async def _i2c_write_report(self, data):
         """
         I2c write reply
@@ -1690,12 +1912,11 @@ class TmxPicoAio:
         :param data: data[0] = i2c device
         """
         if self.allow_i2c_errors:
-            print(f'i2c Read Failed for I2C port {data[0]}')
+            print(f"i2c Read Failed for I2C port {data[0]}")
             return
         if self.shutdown_on_exception:
             await self.shutdown()
-        raise RuntimeError(
-            f'i2c Read Failed for I2C port {data[0]}')
+        raise RuntimeError(f"i2c Read Failed for I2C port {data[0]}")
 
     async def _report_loop_data(self, data):
         """
@@ -1732,7 +1953,7 @@ class TmxPicoAio:
         :return:
         """
         value = (data[1] << 8) + data[2]
-        print(f'DEBUG ID: {data[0]} Value: {value}')
+        print(f"DEBUG ID: {data[0]} Value: {value}")
 
     async def _send_command(self, command):
         """
@@ -1746,11 +1967,16 @@ class TmxPicoAio:
         command.insert(0, len(command))
         send_message = bytes(command)
         try:
-            self.serial_port.write(send_message)
+            await self.serial_port.write(send_message)
         except AttributeError:
             if self.shutdown_on_exception:
                 await self.shutdown()
-            raise RuntimeError('Is your USB cable plugged in?')
+            raise RuntimeError("Is your USB cable plugged in?")
+        except Exception as ex:
+            # print(command)
+            # traceback.print_exception(type(ex), ex, ex.__traceback__)
+            if self.shutdown_on_exception:
+                await self.shutdown()
 
     async def _servo_unavailable(self, report):
         """
@@ -1760,7 +1986,8 @@ class TmxPicoAio:
         if self.shutdown_on_exception:
             await self.shutdown()
         raise RuntimeError(
-            f'Servo Attach For Pin {report[0]} Failed: No Available Servos')
+            f"Servo Attach For Pin {report[0]} Failed: No Available Servos"
+        )
 
     async def _sonar_distance_report(self, report):
         """
@@ -1775,11 +2002,16 @@ class TmxPicoAio:
         cb = self.sonar_callbacks[report[0]]
 
         # build report data
-        if report[1] == 0 and report[2] == 0 and report[3] == 0:
-            cb_list = [PrivateConstants.SONAR_DISTANCE, report[0],
-                       0, time.time()]
-        else:
-            cb_list = [PrivateConstants.SONAR_DISTANCE, report[0],
-                       (report[1]*100 + report[2]), time.time()]
+        cb_list = [
+            PrivateConstants.SONAR_DISTANCE,
+            report[0],
+            (report[1] * 100 + report[2]),
+            time.time(),
+        ]
 
         await cb(cb_list)
+
+
+# Fix for circular dependencies:
+from tmx_pico_aio import tmx_sensors
+from tmx_pico_aio import tmx_modules

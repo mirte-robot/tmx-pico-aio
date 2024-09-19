@@ -18,38 +18,46 @@
  Based on the DHTNew library - https://github.com/RobTillaart/DHTNew
 """
 
-import sys
 import asyncio
+import sys
 
 from tmx_pico_aio import tmx_pico_aio
 
 """
-Setup a pin for output and fade its intensity
+Setup a pin for digital output 
+and toggle the pin 5 times.
 """
 
 # some globals
-# make sure to select a PWM pin
-DIGITAL_PIN = 25
+DIGITAL_PIN = 18  # the board LED
+pin2 = 19
 
 
-async def fade(the_board):
+async def blink(my_board, pin, pin2, pin3, pin4):
     # Set the DIGITAL_PIN as an output pin
-    await the_board.set_pin_mode_pwm_output(DIGITAL_PIN)
+    # set the pin mode
+    await my_board.set_pin_mode_digital_output(pin)
+    await my_board.set_pin_mode_digital_output(pin2)
+    await my_board.set_pin_mode_digital_output(pin3)
+    await my_board.set_pin_mode_digital_output(pin4)
 
-    # try:
-    # use raw values for a fade
-    for level in range(0, 19999, 10):
-        await the_board.pwm_write(DIGITAL_PIN, level, raw=True)
-    for level in range(19999, 0, -10):
-        await the_board.pwm_write(DIGITAL_PIN, level, raw=True)
-
+    # toggle the pin 4 times and exit
+    await my_board.digital_write(pin, 1)
+    await my_board.digital_write(pin2, 0)
     await asyncio.sleep(0.5)
-    # use percentages for a fade
-    for level in range(0, 99):
-        await the_board.pwm_write(DIGITAL_PIN, level)
+
+    for x in range(100000):
+        print("ON", x)
+        await my_board.digital_write(pin, 1)
+        await my_board.digital_write(pin2, 0)
+        await my_board.digital_write(pin3, 1)
+        await my_board.digital_write(pin4, 0)
         await asyncio.sleep(0.01)
-    for level in range(99, 0, -1):
-        await the_board.pwm_write(DIGITAL_PIN, level)
+        print("OFF")
+        await my_board.digital_write(pin, 0)
+        await my_board.digital_write(pin2, 1)
+        await my_board.digital_write(pin3, 0)
+        await my_board.digital_write(pin4, 1)
         await asyncio.sleep(0.01)
 
 
@@ -62,7 +70,7 @@ except KeyboardInterrupt:
 
 try:
     # start the main function
-    loop.run_until_complete(fade(board))
+    loop.run_until_complete(blink(board, DIGITAL_PIN, pin2, 20, 21))
     loop.run_until_complete(board.reset_board())
 except KeyboardInterrupt:
     loop.run_until_complete(board.shutdown())

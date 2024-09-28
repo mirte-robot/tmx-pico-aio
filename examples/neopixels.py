@@ -27,7 +27,7 @@ async def neopixel_demo(my_board):
     """
 
     # enable neopixel support on the Pico
-    await my_board.set_pin_mode_neopixel(pin_number=4)
+    await my_board.set_pin_mode_neopixel(pin_number=27, num_pixels=18)
 
     # set some values and the show them
     await my_board.neo_pixel_set_value(5, 255, 0, 0)
@@ -52,14 +52,20 @@ async def neopixel_demo(my_board):
     await my_board.neopixel_clear()
     # pixel sequence
     while True:
+        print("asdf")
         try:
-            for pixel in range(8):
-                await my_board.neo_pixel_set_value(pixel, 0, 0, 64, True)
-                await asyncio.sleep(.1)
-                await my_board.neopixel_clear()
+            for pixel in range(18):
+                await my_board.neo_pixel_set_value(
+                    pixel, 10 * pixel, 255 - 10 * pixel, pixel, True
+                )
+                # await asyncio.sleep(0.1)
+            await asyncio.sleep(5)
+            await my_board.neopixel_clear()
+
         except (KeyboardInterrupt, RuntimeError):
             await my_board.shutdown()
             sys.exit(0)
+
 
 try:
     # get the event loop
@@ -74,5 +80,3 @@ except KeyboardInterrupt:
     sys.exit(0)
 except RuntimeError:
     sys.exit(0)
-
-

@@ -40,10 +40,12 @@ TIME_STAMP = 3
 
 
 async def the_callback(data):
-    date = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(data[TIME_STAMP]))
+    date = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(data[TIME_STAMP]))
 
-    print(f'{date}\t Trigger Pin::\t{data[TRIGGER]}\t Distance(cm):\t'
-          f'{data[DISTANCE_IN_CENTIMETERS]}')
+    print(
+        f"{date}\t Trigger Pin::\t{data[TRIGGER]}\t Distance(cm):\t"
+        f"{data[DISTANCE_IN_CENTIMETERS]}"
+    )
 
 
 async def get_distance(the_board):

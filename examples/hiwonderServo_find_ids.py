@@ -1,5 +1,5 @@
 """
- Copyright (c) 2021 Alan Yorinks All rights reserved.
+ Copyright (c) 2023 Arend-Jan van Hilten
 
  This program is free software; you can redistribute it and/or
  modify it under the terms of the GNU AFFERO GENERAL PUBLIC LICENSE
@@ -13,44 +13,46 @@
  You should have received a copy of the GNU AFFERO GENERAL PUBLIC LICENSE
  along with this library; if not, write to the Free Software
  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-
- DHT support courtesy of Martyn Wheeler
- Based on the DHTNew library - https://github.com/RobTillaart/DHTNew
 """
 
-import sys
 import asyncio
+import sys
+import time
 
 from tmx_pico_aio import tmx_pico_aio
 
-"""
-Setup a pin for output and fade its intensity
-"""
 
-# some globals
-# make sure to select a PWM pin
-DIGITAL_PIN = 25
+ids = range(1, 20)
+found = []
 
 
-async def fade(the_board):
-    # Set the DIGITAL_PIN as an output pin
-    await the_board.set_pin_mode_pwm_output(DIGITAL_PIN)
+async def callback_verify_id(vid, ok):
+    global found
+    # print(vid, ok)
+    if ok > 0:
+        print("found", vid)
+        found.append(vid)
 
-    # try:
-    # use raw values for a fade
-    for level in range(0, 19999, 10):
-        await the_board.pwm_write(DIGITAL_PIN, level, raw=True)
-    for level in range(19999, 0, -10):
-        await the_board.pwm_write(DIGITAL_PIN, level, raw=True)
 
-    await asyncio.sleep(0.5)
-    # use percentages for a fade
-    for level in range(0, 99):
-        await the_board.pwm_write(DIGITAL_PIN, level)
-        await asyncio.sleep(0.01)
-    for level in range(99, 0, -1):
-        await the_board.pwm_write(DIGITAL_PIN, level)
-        await asyncio.sleep(0.01)
+async def check_servos(the_board):
+    try:
+        updaters = await the_board.modules.add_hiwonder_servo(
+            0, 0, 1, [], callback_id_verify=callback_verify_id
+        )
+        await asyncio.sleep(0.5)
+        for x in ids:
+            # print("check ", x)
+            await updaters["verify_id"](x)
+            await asyncio.sleep(0.1)
+        print("All ids:", found)
+
+    except KeyboardInterrupt:
+        await the_board.shutdown()
+        print(ranges)
+        sys.exit(0)
+
+    await the_board.shutdown()
+    sys.exit(0)
 
 
 # get the event loop
@@ -62,10 +64,8 @@ except KeyboardInterrupt:
 
 try:
     # start the main function
-    loop.run_until_complete(fade(board))
+    loop.run_until_complete(check_servos(board))
     loop.run_until_complete(board.reset_board())
 except KeyboardInterrupt:
     loop.run_until_complete(board.shutdown())
-    sys.exit(0)
-except RuntimeError:
     sys.exit(0)

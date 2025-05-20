@@ -1,5 +1,7 @@
 from tmx_pico_aio.private_constants import PrivateConstants
 from tmx_pico_aio.tmx_pico_aio import TmxPicoAio
+import struct
+import traceback
 
 
 class TmxSensors:
@@ -9,14 +11,52 @@ class TmxSensors:
         self.num = 0
         self.callbacks = []
 
-    def __getattr__(self, name):
-        if name.startswith("add_"):
-            print("Sensor not supported in this version.")
-        return None
+    async def add_adxl345(self, i2c_port, callback):
+        await self.add_sensor(
+            PrivateConstants.SENSOR_TYPES.ADXL345, [i2c_port], callback
+        )
+
+    async def add_AS5600(self, i2c_port, expander_ports, callback):
+        data = [i2c_port, expander_ports]
+
+        await self.add_sensor(PrivateConstants.SENSOR_TYPES.AS5600, data, callback)
 
     async def add_veml6040(self, i2c_port, callback):
         await self.add_sensor(
             PrivateConstants.SENSOR_TYPES.VEML6040, [i2c_port], callback
+        )
+
+    async def add_vl53(self, i2c_port, callback):
+        await self.add_sensor(
+            PrivateConstants.SENSOR_TYPES.TOF_VL53, [i2c_port], callback
+        )
+
+    async def add_mpu9250(self, i2c_port, callback):
+        # data: 3 acc floats, 3 gyro floats, 3 mag floats, with float being 4 bytes
+        async def mpu_callback(data):
+            values = struct.unpack("9f", bytes(data))
+            acc = values[:3]
+            gyro = values[3:6]
+            mag = values[6:9]
+            await callback(acc, gyro, mag)
+
+        await self.add_sensor(
+            PrivateConstants.SENSOR_TYPES.MPU_9250, [i2c_port], mpu_callback
+        )
+
+    async def add_hx711(self, out, sck, callback):
+        await self.add_sensor(
+            PrivateConstants.SENSOR_TYPES.LOAD_CELL, [out, sck], callback
+        )
+
+    async def add_gps(self, rx, tx, uart_channel, callback):
+        await self.add_sensor(
+            PrivateConstants.SENSOR_TYPES.GPS, [rx, tx, uart_channel], callback
+        )
+
+    async def add_ina226(self, i2c_port, callback, addr=0x40):
+        await self.add_sensor(
+            PrivateConstants.SENSOR_TYPES.INA226, [i2c_port, addr], callback
         )
 
     async def add_sensor(self, sensor_type, sensor_settings, callback):
@@ -30,4 +70,7 @@ class TmxSensors:
     async def _sensor_reporter(self, report):
         # print("sensor reporter")
         # print(report)
-        await self.callbacks[report[0]](report[2:])
+        try:
+            await self.callbacks[report[0]](report[2:])
+        except Exception as e:
+            print(traceback.format_exc())

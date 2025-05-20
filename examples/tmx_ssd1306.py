@@ -18,33 +18,29 @@ Foundation, Inc., .001 Franklin St, Fifth Floor, Boston, MA  0.00110.001.001  US
 import asyncio
 import sys
 import time
-from tmx_pico_aio import tmx_pico_aio
 import struct
-
-"""
-This example sets up and control an ADXL345 i2c accelerometer.
-It will continuously print data the raw xyz data from the device.
-"""
+from tmx_pico_aio import tmx_pico_aio
 
 
-# the call back function to print the adxl345 data
-async def the_callback(data):
-    [dist] = struct.unpack(
-        ">H", b"".join(list(map(lambda i: i.to_bytes(1, "big"), data)))
-    )
-    print(f"dist: {str(dist): >4} mm")
-
-
-async def vl53(my_board):
+async def ssd1306(my_board):
     i2c_port = 0
     scl = 5
     sda = 4
     await my_board.set_pin_mode_i2c(i2c_port, sda, scl)
     await asyncio.sleep(0.1)
-    await my_board.sensors.add_vl53(i2c_port, the_callback)
+    funcs = await my_board.modules.add_tmx_ssd1306(i2c_port)
+    print(funcs)
+    await funcs["send_text"](
+        "Hoi Martinhjklsdfjkladfsjkladfsjkladfjklsljkadfsjklfsdajkladfsjkl"
+    )
+
+    # await funcs["send_text"]("Hoi Martin")
+    i = 0
     while True:
         try:
+            i += 1
             await asyncio.sleep(1)
+            await funcs["send_text"]("Hoi Martin" + str(i))
         except (KeyboardInterrupt, RuntimeError):
             await my_board.shutdown()
             sys.exit(0)
@@ -61,8 +57,7 @@ except KeyboardInterrupt as e:
 
 try:
     # start the main function
-    loop.run_until_complete(vl53(board))
-    print("done veml")
+    loop.run_until_complete(ssd1306(board))
 except KeyboardInterrupt:
     loop.run_until_complete(board.shutdown())
     sys.exit(0)

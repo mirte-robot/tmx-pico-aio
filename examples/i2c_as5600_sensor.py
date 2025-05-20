@@ -29,19 +29,21 @@ It will continuously print data the raw xyz data from the device.
 
 # the call back function to print the adxl345 data
 async def the_callback(data):
-    [dist] = struct.unpack(
-        ">H", b"".join(list(map(lambda i: i.to_bytes(1, "big"), data)))
-    )
-    print(f"dist: {str(dist): >4} mm")
+    # ints = list(map(lambda i: i.to_bytes(1, "big"), data))
+
+    # bytes_obj = b"".join(ints)
+    # vals = list(struct.unpack("<2f", bytes_obj))
+    print("cb", data)
+    # print(f"{vals[0]}V {vals[1]} mA")
 
 
-async def vl53(my_board):
+async def ina226(my_board):
     i2c_port = 0
     scl = 5
     sda = 4
     await my_board.set_pin_mode_i2c(i2c_port, sda, scl)
     await asyncio.sleep(0.1)
-    await my_board.sensors.add_vl53(i2c_port, the_callback)
+    await my_board.sensors.add_AS5600(i2c_port, 0b0010100, the_callback)
     while True:
         try:
             await asyncio.sleep(1)
@@ -61,8 +63,8 @@ except KeyboardInterrupt as e:
 
 try:
     # start the main function
-    loop.run_until_complete(vl53(board))
-    print("done veml")
+    loop.run_until_complete(ina226(board))
+    print("done ina")
 except KeyboardInterrupt:
     loop.run_until_complete(board.shutdown())
     sys.exit(0)

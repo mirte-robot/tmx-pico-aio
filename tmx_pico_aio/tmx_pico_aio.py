@@ -1,30 +1,34 @@
 """
- Copyright (c) 2021 Alan Yorinks All rights reserved.
+Copyright (c) 2021 Alan Yorinks All rights reserved.
 
- This program is free software; you can redistribute it and/or
- modify it under the terms of the GNU AFFERO GENERAL PUBLIC LICENSE
- Version 3 as published by the Free Software Foundation; either
- or (at your option) any later version.
- This library is distributed in the hope that it will be useful,f
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- General Public License for more details.
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU AFFERO GENERAL PUBLIC LICENSE
+Version 3 as published by the Free Software Foundation; either
+or (at your option) any later version.
+This library is distributed in the hope that it will be useful,f
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+General Public License for more details.
 
- You should have received a copy of the GNU AFFERO GENERAL PUBLIC LICENSE
- along with this library; if not, write to the Free Software
- Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+You should have received a copy of the GNU AFFERO GENERAL PUBLIC LICENSE
+along with this library; if not, write to the Free Software
+Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 """
 
 import asyncio
 import sys
+import os
+import signal
 import time
 import traceback
+from datetime import datetime
 
 from serial.serialutil import SerialException
 from serial.tools import list_ports
 
 from tmx_pico_aio.private_constants import PrivateConstants
 from tmx_pico_aio.telemtrix_aio_serial import TelemetrixAioSerial
+from tmx_pico_aio.Watchdog import Watchdog
 
 
 # noinspection PyPep8,PyMethodMayBeStatic,GrazieInspection
@@ -45,6 +49,7 @@ class TmxPicoAio:
         close_loop_on_shutdown=True,
         reset_on_shutdown=True,
         allow_i2c_errors=False,
+        hard_shutdown=False,
     ):
         """
 
@@ -97,6 +102,7 @@ class TmxPicoAio:
         self.autostart = autostart
         self.close_loop_on_shutdown = close_loop_on_shutdown
         self.allow_i2c_errors = allow_i2c_errors
+        self.hard_shutdown = hard_shutdown
         # set the event loop
         if loop is None:
             self.loop = asyncio.get_event_loop()
@@ -261,7 +267,7 @@ class TmxPicoAio:
         # self._module_reporter = None
         self.sensors = tmx_sensors.TmxSensors(self)
         self.modules = tmx_modules.TmxModules(self)
-
+        self.watchdog = None
         print(
             f"TelemetrixRpiPicoAio:  Version {PrivateConstants.TELEMETRIX_VERSION}\n\n"
             f"Copyright (c) 2021 Alan Yorinks All Rights Reserved.\n"
@@ -781,9 +787,6 @@ class TmxPicoAio:
         command = [PrivateConstants.SET_NEO_PIXEL, pixel_number, r, g, b, auto_show]
         await self._send_command(command)
 
-        if auto_show:
-            await self.neopixel_show()
-
     async def neopixel_clear(self, auto_show=True):
         """
         Clear all pixels
@@ -795,8 +798,6 @@ class TmxPicoAio:
             raise RuntimeError("You must call set_pin_mode_neopixel first")
         command = [PrivateConstants.CLEAR_ALL_NEO_PIXELS, auto_show]
         await self._send_command(command)
-        if auto_show:
-            await self.neopixel_show()
 
     async def neopixel_fill(self, r=0, g=0, b=0, auto_show=True):
         """
@@ -816,9 +817,6 @@ class TmxPicoAio:
             raise RuntimeError("Pixel value must be in the range of 0-255")
         command = [PrivateConstants.FILL_ALL_NEO_PIXELS, r, g, b, auto_show]
         await self._send_command(command)
-
-        if auto_show:
-            await self.neopixel_show()
 
     async def neopixel_show(self):
         """
@@ -957,7 +955,7 @@ class TmxPicoAio:
 
 
         """
-        if fill_r or fill_g or fill_g not in range(256):
+        if any([x not in range(256) for x in [fill_r, fill_g, fill_b]]):
             raise RuntimeError("Pixel value must be in the range of 0-255")
 
         self.number_of_pixels = num_pixels
@@ -1634,11 +1632,24 @@ class TmxPicoAio:
         If any exceptions are thrown, they are ignored.
 
         """
+        if self.watchdog:
+            self.watchdog.stop()
+            self.watchdog = None
+
         if self.shutdown_flag:
             return
         print("shutting down!")
-        self.shutdown_flag = True
+        try:
+            raise RuntimeError("Why shutdown?")
+        except Exception as ex:
+            # print(command)
+            traceback.print_exception(type(ex), ex, ex.__traceback__)
 
+        self.shutdown_flag = True
+        if self.hard_shutdown:
+            os.kill(
+                os.getpid(), signal.SIGINT
+            )  # very bad way to shutdown, but sys.exit() is caught in all kind of places(asyncio)
         # stop all reporting - both analog and digital
         try:
             if self.serial_port:
@@ -1687,19 +1698,31 @@ class TmxPicoAio:
 
         await cb(cb_list)
 
+    def shutdown_sync(self):
+        if self.hard_shutdown:
+            os.kill(os.getpid(), signal.SIGINT)
+        else:
+            asyncio.run(self.shutdown())
+
     async def ping(
         self,
     ):  # ping the pico at 2Hz, and receive the same value back and a random(at start) value from the pico
         self.pingNum = 0
         self.randomPicoNum = -1
         counter = 0
+        self.watchdog = Watchdog(10, self.shutdown_sync)
+        # Added external (diff thread) watchdog as _send_command can hang (usb issues) and asyncio will not return command for this loop to trigger shutdown
         while not self.shutdown_flag:
-            if ((counter + 256) - self.pingNum) % 256 > 10:
+            ping_diff = ((counter + 256) - self.pingNum) % 256
+            if ping_diff > 1:
+                print("ping diff", ping_diff, datetime.now())
+            if ping_diff > 8:
                 print("incorrect ping from Pico", self.pingNum, counter)
                 await self.shutdown()
             counter = (counter + 1) % 256
             await self._send_command([PrivateConstants.PING, counter])
             await asyncio.sleep(0.5)
+            self.watchdog.reset()  # pet the dog
 
     async def _pong_report(self, report):
         self.pingNum = report[0]
@@ -1808,9 +1831,16 @@ class TmxPicoAio:
             # command dictionary
             # noinspection PyArgumentList
             try:  # TODO: check if direct calling is faster or adding it to the event loop is faster
-                self.loop.create_task(self.report_dispatch[report](packet[1:]))
+                self.loop.create_task(self.dispatch_func(report, packet))
             except Exception as e:
                 print("dispatch error:", e)
+
+    async def dispatch_func(self, report, packet):
+        try:
+            # print("dispatching ", self.report_dispatch[report].__name__)
+            await self.report_dispatch[report](packet[1:])
+        except Exception as e:
+            print("dispatch err: ", e)
 
     async def set_scan_delay(self, delay):
         """
@@ -1963,7 +1993,13 @@ class TmxPicoAio:
 
         :returns: number of bytes sent
         """
+        # print(traceback.format_stack()[-2])
+
         # the length of the list is added at the head
+        if len(command) > 30:
+            print("command too long", len(command))
+            raise RuntimeError("command too long")
+
         command.insert(0, len(command))
         send_message = bytes(command)
         try:

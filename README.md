@@ -1,5 +1,12 @@
 # Tmx-Pico-Aio
 
+## Probably need:
+pip install importlib_metadata==6 
+pip install wheel==0.43.0 
+
+
+
+
 Interact and monitor  a Raspberry  Pi Pico remotely  from your PC
 using Python asyncio.
 

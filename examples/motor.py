@@ -20,25 +20,45 @@ Based on the DHTNew library - https://github.com/RobTillaart/DHTNew
 
 import asyncio
 import sys
-import time
 
 from tmx_pico_aio import tmx_pico_aio
 
+"""
+Setup a pin for digital output 
+and toggle the pin 5 times.
+"""
 
-async def dummy_callback(data):
-    pass
+# some globals
+DIGITAL_PIN = 18  # the board LED
+pin2 = 19
 
 
-async def get_pin_report(the_board):
-    # set some pins to different modes
-    await the_board.set_pin_mode_digital_output(4)
-    await the_board.set_pin_mode_digital_input(6, callback=dummy_callback)
-    await the_board.set_pin_mode_analog_input(1, callback=dummy_callback)
-    await the_board.set_pin_mode_digital_input_pullup(9, callback=dummy_callback)
-    await the_board.set_pin_mode_neopixel(14)
-    await the_board.set_pin_mode_i2c(0, 4, 5)
+async def blink(my_board, pin, pin2, pin3, pin4):
+    # Set the DIGITAL_PIN as an output pin
+    # set the pin mode
+    await my_board.set_pin_mode_digital_output(pin)
+    await my_board.set_pin_mode_digital_output(pin2)
+    await my_board.set_pin_mode_digital_output(pin3)
+    await my_board.set_pin_mode_digital_output(pin4)
 
-    print(await the_board.get_pico_pins())
+    # toggle the pin 4 times and exit
+    await my_board.digital_write(pin, 1)
+    await my_board.digital_write(pin2, 0)
+    await asyncio.sleep(0.5)
+
+    for x in range(100000):
+        print("ON", x)
+        await my_board.digital_write(pin, 1)
+        await my_board.digital_write(pin2, 0)
+        await my_board.digital_write(pin3, 1)
+        await my_board.digital_write(pin4, 0)
+        await asyncio.sleep(0.01)
+        print("OFF")
+        await my_board.digital_write(pin, 0)
+        await my_board.digital_write(pin2, 1)
+        await my_board.digital_write(pin3, 0)
+        await my_board.digital_write(pin4, 1)
+        await asyncio.sleep(0.01)
 
 
 # get the event loop
@@ -50,7 +70,7 @@ except KeyboardInterrupt:
 
 try:
     # start the main function
-    loop.run_until_complete(get_pin_report(board))
+    loop.run_until_complete(blink(board, DIGITAL_PIN, pin2, 20, 21))
     loop.run_until_complete(board.reset_board())
 except KeyboardInterrupt:
     loop.run_until_complete(board.shutdown())

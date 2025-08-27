@@ -5,6 +5,7 @@ from tmx_pico_aio import tmx_pico_aio
 from adafruit_ssd1306 import _SSD1306
 from PIL import Image, ImageDraw, ImageFont
 import textwrap
+
 font = ImageFont.truetype("/usr/share/fonts/dejavu/DejaVuSans.ttf", 12)
 import os, os.path
 
@@ -39,11 +40,13 @@ class Oled(_SSD1306):
         # self.buffer = bytearray(16)
         # self.buffer[0] = 0x40  # Set first byte of data buffer to Co=0, D/C=1
         pin_numbers = {"sda": 4, "scl": 5}
-        self.init_awaits.append(self.board.set_pin_mode_i2c(
-            i2c_port=0,
-            sda_gpio=pin_numbers["sda"],
-            scl_gpio=pin_numbers["scl"],
-        ))
+        self.init_awaits.append(
+            self.board.set_pin_mode_i2c(
+                i2c_port=0,
+                sda_gpio=pin_numbers["sda"],
+                scl_gpio=pin_numbers["scl"],
+            )
+        )
         time.sleep(1)
         super().__init__(
             memoryview(self.buffer)[1:],
@@ -61,13 +64,13 @@ class Oled(_SSD1306):
             await ev
         for cmd in self.write_commands:
             out = await self.board.i2c_write(60, cmd, i2c_port=self.i2c_port)
-            if(not out):
+            if not out:
                 print("write failed start")
-                self.failed=True
+                self.failed = True
                 return
 
     async def set_oled_image_service(self, type, value):
-        if(self.failed):
+        if self.failed:
             print("oled writing failed")
             return
         if type == "text":
@@ -88,10 +91,15 @@ class Oled(_SSD1306):
             await self.show_async()
 
         if type == "image":
-            await self.show_png( os.path.dirname(os.path.abspath(__file__)) +"/../images/example/" + value + ".png" )  # open color image
+            await self.show_png(
+                os.path.dirname(os.path.abspath(__file__))
+                + "/../images/example/"
+                + value
+                + ".png"
+            )  # open color image
 
         if type == "animation":
-            folder = os.path.dirname(os.path.abspath(__file__)) +"/../images/example/"
+            folder = os.path.dirname(os.path.abspath(__file__)) + "/../images/example/"
             number_of_images = len(
                 [
                     name
@@ -147,34 +155,34 @@ class Oled(_SSD1306):
         self.temp[0] = 0x80
         self.temp[1] = cmd
         self.write_commands.append([0x80, cmd])
-    
+
     async def write_cmd_async(self, cmd):
-        if(self.failed):
+        if self.failed:
             return
         self.temp[0] = 0x80
         self.temp[1] = cmd
         out = await self.board.i2c_write(60, self.temp, i2c_port=self.i2c_port)
-        if(not out):
+        if not out:
             print("failed write oled")
             self.failed = True
 
     async def write_framebuf_async(self):
-        if(self.failed):
+        if self.failed:
             return
+
         async def task(self, i):
             buf = self.buffer[i * 16 : (i + 1) * 16 + 1]
             buf[0] = 0x40
             out = await self.board.i2c_write(60, buf, i2c_port=self.i2c_port)
-            if(not out):
+            if not out:
                 print("failed wrcmd")
                 self.failed = True
+
         tasks = []
-        for i in range(
-            64
-        ):
+        for i in range(64):
             tasks.append(task(self, i))
         await asyncio.gather(*tasks)
-    
+
     def write_framebuf(self):
         for i in range(
             64
@@ -183,13 +191,11 @@ class Oled(_SSD1306):
             buf[0] = 0x40
             self.write_commands.append(buf)
 
-
     async def show_png(self, file):
         image_file = Image.open(file)  # open color image
         image_file = image_file.convert("1", dither=Image.NONE)
         self.image(image_file)
         await self.show_async()
-
 
 
 async def oled(board):
@@ -199,12 +205,12 @@ async def oled(board):
     return oled
 
 
-
 loop = asyncio.new_event_loop()
+
 
 async def main():
     try:
-        board = tmx_pico_aio.TmxPicoAio( autostart=False, loop = loop)
+        board = tmx_pico_aio.TmxPicoAio(autostart=False, loop=loop)
         await board.start_aio()
         print("got board")
     except KeyboardInterrupt:
@@ -212,9 +218,9 @@ async def main():
     try:
         # start the main function
         ol = await oled(board)
-        
+
         await asyncio.sleep(4)
-        
+
         await ol.set_oled_image_service("text", "soep")
         await asyncio.sleep(4)
         await ol.set_oled_image_service("image", "tmx-1")
@@ -230,5 +236,6 @@ async def main():
     except RuntimeError as e:
         print(e)
         sys.exit(0)
+
 
 loop.run_until_complete(main())

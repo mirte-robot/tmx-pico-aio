@@ -1,22 +1,23 @@
 """
- Copyright (c) 2021 Alan Yorinks All rights reserved.
+Copyright (c) 2021 Alan Yorinks All rights reserved.
 
- This program is free software; you can redistribute it and/or
- modify it under the terms of the GNU AFFERO GENERAL PUBLIC LICENSE
- Version 3 as published by the Free Software Foundation; either
- or (at your option) any later version.
- This library is distributed in the hope that it will be useful,f
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- General Public License for more details.
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU AFFERO GENERAL PUBLIC LICENSE
+Version 3 as published by the Free Software Foundation; either
+or (at your option) any later version.
+This library is distributed in the hope that it will be useful,f
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+General Public License for more details.
 
- You should have received a copy of the GNU AFFERO GENERAL PUBLIC LICENSE
- along with this library; if not, write to the Free Software
- Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+You should have received a copy of the GNU AFFERO GENERAL PUBLIC LICENSE
+along with this library; if not, write to the Free Software
+Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
- DHT support courtesy of Martyn Wheeler
- Based on the DHTNew library - https://github.com/RobTillaart/DHTNew
+DHT support courtesy of Martyn Wheeler
+Based on the DHTNew library - https://github.com/RobTillaart/DHTNew
 """
+
 import asyncio
 import sys
 import time
@@ -45,38 +46,43 @@ async def the_callback(data):
     the date and time when the differential is exceeded
     :param data: [report_type, ADC#, current reported value, timestamp]
     """
-    date = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(data[CB_TIME]))
-    print(f'ADC Report Type: {data[CB_PIN_MODE]} ADC: {data[CB_PIN]} '
-          f'Value: {data[CB_VALUE]} Time Stamp: {date}')
+    date = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(data[CB_TIME]))
+    print(
+        f"ADC Report Type: {data[CB_PIN_MODE]} ADC: {data[CB_PIN]} "
+        f"Value: {data[CB_VALUE]} Time Stamp: {date}"
+    )
 
 
 async def analog_in(my_board, adc):
     # noinspection GrazieInspection
     """
-         This function establishes the pin as an
-         analog input. Any changes on this pin will
-         be reported through the call back function.
+    This function establishes the pin as an
+    analog input. Any changes on this pin will
+    be reported through the call back function.
 
-         :param my_board: a pymata4 instance
-         :param adc: ADC number
-         """
+    :param my_board: a pymata4 instance
+    :param adc: ADC number
+    """
 
     # set the pin mode
-    await my_board.set_pin_mode_analog_input(adc, differential=10, callback=the_callback)
+    await my_board.set_pin_mode_analog_input(
+        adc, differential=10, callback=the_callback
+    )
 
-    print('Enter Control-C to quit.')
+    print("Enter Control-C to quit.")
     try:
         await asyncio.sleep(5)
-        print('Disabling reporting for 3 seconds.')
+        print("Disabling reporting for 3 seconds.")
         await my_board.disable_analog_reporting(adc)
         await asyncio.sleep(3)
-        print('Re-enabling reporting.')
+        print("Re-enabling reporting.")
         await my_board.enable_analog_reporting(adc)
         while True:
             await asyncio.sleep(5)
     except KeyboardInterrupt:
         await my_board.shutdown()
         sys.exit(0)
+
 
 # get the event loop
 loop = asyncio.get_event_loop()

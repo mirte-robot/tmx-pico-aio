@@ -19,6 +19,7 @@ import asyncio
 import sys
 import time
 from tmx_pico_aio import tmx_pico_aio
+import struct
 
 """
 This example sets up and control an ADXL345 i2c accelerometer.
@@ -26,49 +27,26 @@ It will continuously print data the raw xyz data from the device.
 """
 
 
-def twos_comp(val, bits):
-    """compute the 2's complement of int value val"""
-    if (val & (1 << (bits - 1))) != 0:  # if sign bit is set e.g., 8bit: 128-255
-        val = val - (1 << bits)  # compute negative value
-    return val  # return positive value as is
-
-
 # the call back function to print the adxl345 data
 async def the_callback(data):
-    x = twos_comp(data[1] << 8 | data[0], 16) * 0.004
-    y = twos_comp(data[3] << 8 | data[2], 16) * 0.004
-    z = twos_comp(data[5] << 8 | data[4], 16) * 0.004
+    ints = list(map(lambda i: i.to_bytes(1, "big"), data))
 
-    print(f"x: {x} y: {y} z: {z}")
-    print()
+    bytes_obj = b"".join(ints)
+    vals = list(struct.unpack("<2f", bytes_obj))
+    print(vals, data, ints, bytes_obj)
+    # print(f"{vals[0]}V {vals[1]} mA")
 
 
-async def adxl345(my_board):
-    # setup adxl345
-    # device address = 83
-    await my_board.set_pin_mode_i2c(0, 4, 5)
+async def ina226(my_board):
+    i2c_port = 0
+    scl = 5
+    sda = 4
+    await my_board.set_pin_mode_i2c(i2c_port, sda, scl)
     await asyncio.sleep(0.1)
-
-    # set up power and control register
-    await my_board.i2c_write(83, [45, 0])
-    await asyncio.sleep(0.001)
-    await my_board.i2c_write(83, [45, 8])
-    await asyncio.sleep(0.001)
-    # set up the data format register
-    await my_board.i2c_write(83, [49, 8])  # 0b0000_1000 = FULL_RES, +- 2g
-    await asyncio.sleep(0.001)
-    # await my_board.i2c_write(83, [49, 3]) # why set the same register?
-    # await asyncio.sleep(.001)
+    await my_board.sensors.add_ina226(i2c_port, the_callback, 0x41)
     while True:
-        # read 6 bytes from the data register
         try:
-            out = await my_board.i2c_read(83, 50, 6)  # takes 2ms
-            if not out:
-                print("failed read")
-                await my_board.shutdown()
-                sys.exit(0)
-            the_callback(out[5:])
-            await asyncio.sleep(0.001)
+            await asyncio.sleep(1)
         except (KeyboardInterrupt, RuntimeError):
             await my_board.shutdown()
             sys.exit(0)
@@ -85,9 +63,8 @@ except KeyboardInterrupt as e:
 
 try:
     # start the main function
-    loop.run_until_complete(adxl345(board))
-    print("done axl")
-    # loop.run_until_complete(board.reset_board())
+    loop.run_until_complete(ina226(board))
+    print("done ina")
 except KeyboardInterrupt:
     loop.run_until_complete(board.shutdown())
     sys.exit(0)

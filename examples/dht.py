@@ -1,18 +1,18 @@
 """
- Copyright (c) 2021 Alan Yorinks All rights reserved.
+Copyright (c) 2021 Alan Yorinks All rights reserved.
 
- This program is free software; you can redistribute it and/or
- modify it under the terms of the GNU AFFERO GENERAL PUBLIC LICENSE
- Version 3 as published by the Free Software Foundation; either
- or (at your option) any later version.
- This library is distributed in the hope that it will be useful,f
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- General Public License for more details.
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU AFFERO GENERAL PUBLIC LICENSE
+Version 3 as published by the Free Software Foundation; either
+or (at your option) any later version.
+This library is distributed in the hope that it will be useful,f
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+General Public License for more details.
 
- You should have received a copy of the GNU AFFERO GENERAL PUBLIC LICENSE
- along with this library; if not, write to the Free Software
- Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+You should have received a copy of the GNU AFFERO GENERAL PUBLIC LICENSE
+along with this library; if not, write to the Free Software
+Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 """
 
 import asyncio
@@ -43,12 +43,14 @@ async def the_callback(data):
 
     """
     # pretty print the info
-    date = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(data[TIME]))
+    date = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(data[TIME]))
     temperature_c = data[TEMPERATURE]
     temperature_f = round(temperature_c * 9 / 5 + 32)
-    print(f'DHT Data Report:'
-          f'Pin: {data[PIN]} Humidity: {data[HUMIDITY]} Temperature:  '
-          f'{temperature_c}c  {temperature_f}f  Time: {date}')
+    print(
+        f"DHT Data Report:"
+        f"Pin: {data[PIN]} Humidity: {data[HUMIDITY]} Temperature:  "
+        f"{temperature_c}c  {temperature_f}f  Time: {date}"
+    )
 
 
 async def dht(the_board):
@@ -82,4 +84,3 @@ except KeyboardInterrupt:
     sys.exit(0)
 except RuntimeError:
     sys.exit(0)
-

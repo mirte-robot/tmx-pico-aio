@@ -1,19 +1,21 @@
 """
- Copyright (c) 2021 Alan Yorinks All rights reserved.
+Copyright (c) 2021 Alan Yorinks All rights reserved.
 
- This program is free software; you can redistribute it and/or
- modify it under the terms of the GNU AFFERO GENERAL PUBLIC LICENSE
- Version 3 as published by the Free Software Foundation; either
- or (at your option) any later version.
- This library is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- General Public License for more details.
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU AFFERO GENERAL PUBLIC LICENSE
+Version 3 as published by the Free Software Foundation; either
+or (at your option) any later version.
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+General Public License for more details.
 
- You should have received a copy of the GNU AFFERO GENERAL PUBLIC LICENSE
- along with this library; if not, write to the Free Software
- Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+You should have received a copy of the GNU AFFERO GENERAL PUBLIC LICENSE
+along with this library; if not, write to the Free Software
+Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 """
+
+from enum import Enum
 
 
 class PrivateConstants:
@@ -29,7 +31,9 @@ class PrivateConstants:
     PWM_WRITE = 3
     MODIFY_REPORTING = 4
     GET_FIRMWARE_VERSION = 5
-    RETRIEVE_PICO_UNIQUE_ID = 6  # Arduino ID query for auto-detect of telemetrix connected boards
+    RETRIEVE_PICO_UNIQUE_ID = (
+        6  # Arduino ID query for auto-detect of telemetrix connected boards
+    )
     SERVO_ATTACH = 7
     SERVO_WRITE = 8
     SERVO_DETACH = 9
@@ -54,7 +58,10 @@ class PrivateConstants:
     SPI_CS_CONTROL = 28
     SET_SCAN_DELAY = 29
     ENCODER_NEW = 30
-
+    SENSOR_NEW = 31
+    PING = 32
+    MODULE_NEW = 33
+    MODULE_DATA = 34
     # reports
     # debug data from Arduino
     DIGITAL_REPORT = DIGITAL_WRITE
@@ -70,8 +77,10 @@ class PrivateConstants:
     SPI_REPORT = 13
     ENCODER_REPORT = 14
     DEBUG_PRINT = 99
-
-    TELEMETRIX_VERSION = "1.3"
+    SENSOR_REPORT = 20
+    PONG_REPORT = PING
+    MODULE_REPORT = MODULE_DATA
+    TELEMETRIX_VERSION = "1.5"
 
     # reporting control
     REPORTING_DISABLE_ALL = 0
@@ -132,3 +141,19 @@ class PrivateConstants:
     RED = 0
     GREEN = 1
     BLUE = 2
+
+    class SENSOR_TYPES(Enum):
+        GPS = 0
+        LOAD_CELL = 1
+        MPU_9250 = 2
+        TOF_VL53 = 3
+        VEML6040 = 4  # Color sensor
+        ADXL345 = 5  # // 3 axis accel
+        INA226 = 6
+        AS5600 = 8
+
+    class MODULE_TYPES(Enum):
+        PCA9685 = 0
+        HIWONDERSERVO = 1
+        SHUTDOWN_RELAY = 2
+        TMX_SSD1306 = 3

@@ -1,18 +1,18 @@
 """
- Copyright (c) 2021 Alan Yorinks All rights reserved.
+Copyright (c) 2021 Alan Yorinks All rights reserved.
 
- This program is free software; you can redistribute it and/or
- modify it under the terms of the GNU AFFERO GENERAL PUBLIC LICENSE
- Version 3 as published by the Free Software Foundation; either
- or (at your option) any later version.
- This library is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- General Public License for more details.
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU AFFERO GENERAL PUBLIC LICENSE
+Version 3 as published by the Free Software Foundation; either
+or (at your option) any later version.
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+General Public License for more details.
 
- You should have received a copy of the GNU AFFERO GENERAL PUBLIC LICENSE
- along with this library; if not, write to the Free Software
- Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+You should have received a copy of the GNU AFFERO GENERAL PUBLIC LICENSE
+along with this library; if not, write to the Free Software
+Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 """
 
 import asyncio
@@ -31,7 +31,7 @@ async def the_callback(data):
 
     :param data: [looped back data]
     """
-    print(f'Looped back: {chr(data[0])}')
+    print(f"Looped back: {chr(data[0])}")
 
 
 async def loop_back(my_board, loop_back_data):
@@ -45,11 +45,12 @@ async def loop_back(my_board, loop_back_data):
     try:
         for data in loop_back_data:
             await my_board.loop_back(data, callback=the_callback)
-            print(f'Sending: {data}')
-            await asyncio.sleep(.1)
+            print(f"Sending: {data}")
+            await asyncio.sleep(0.1)
     except KeyboardInterrupt:
         my_board.shutdown()
         sys.exit(0)
+
 
 # get the event loop
 loop = asyncio.get_event_loop()
@@ -61,7 +62,7 @@ except (KeyboardInterrupt, RuntimeError):
     # loop.run_until_complete(board.reset_board())
     sys.exit()
 
-char_list = ['A', 'B', 'Z']
+char_list = ["A", "B", "Z"]
 try:
     # start the main function
     loop.run_until_complete(loop_back(board, char_list))
